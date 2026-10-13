@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useOptimistic, useState, useTransition } from "react";
-import { MessageCircle, MoreHorizontal, Trash2, Globe, Users, Lock } from "lucide-react";
+import { Flame, MessageCircle, MoreHorizontal, Trash2, Globe, Users, Lock, Trophy, TrendingDown, TrendingUp, ArrowUp } from "lucide-react";
 import { addComment, deleteComment, deletePost, react } from "@/app/actions/social";
 import type { PostView } from "@/lib/social";
-import { WORKOUT_ICON, formatDuration } from "@/lib/workouts";
+import { formatDuration } from "@/lib/workouts";
+import { MEAL_SLOT_ICON, WorkoutIcon } from "./icons";
 import { useT } from "./i18n-provider";
-import { Avatar, cn, fmt } from "./ui";
+import { Avatar, cn, fmt, IconTile } from "./ui";
+import { PostImage } from "./lightbox";
 
 function timeAgo(iso: string, locale: string) {
   const s = Math.max(1, Math.round((Date.now() - Date.parse(iso)) / 1000));
@@ -57,8 +59,8 @@ export function PostCard({ post, onDeleted }: { post: PostView; onDeleted?: () =
         <Link href={`/u/${post.author.username}`}><Avatar name={post.author.name} color={post.author.avatarColor} url={post.author.avatarUrl} size={40} /></Link>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-[14px]">
-            <Link href={`/u/${post.author.username}`} className="truncate font-semibold hover:underline">{post.author.name}</Link>
-            <span className="rounded-md bg-surface-2 px-1.5 text-[10px] font-bold text-muted">Lv {post.author.level}</span>
+            <Link href={`/u/${post.author.username}`} className="truncate font-bold hover:underline">{post.author.name}</Link>
+            <span className="rounded-md bg-surface-2 px-1.5 py-px text-[10px] font-extrabold text-muted">Lv {post.author.level}</span>
           </div>
           <div className="flex items-center gap-1 text-[12px] text-muted">
             {timeAgo(post.createdAt, locale)} · <VisIcon className="size-3" />
@@ -80,33 +82,33 @@ export function PostCard({ post, onDeleted }: { post: PostView; onDeleted?: () =
 
       <div className="px-4 pt-3">
         {post.type === "meal" && (
-          <p className="text-[13px] text-muted">🍽️ {t.social.ateMeal} <span className="font-semibold text-text">{t.meals[(p.meal as keyof typeof t.meals) ?? "lunch"]}</span></p>
+          <p className="flex items-center gap-1.5 text-[13px] font-semibold text-muted">
+            {(() => { const I = MEAL_SLOT_ICON[(p.meal as string) ?? "lunch"]; return <I className="size-3.5" />; })()}
+            {t.social.ateMeal} <span className="font-bold text-text">{t.meals[(p.meal as keyof typeof t.meals) ?? "lunch"]}</span>
+          </p>
         )}
         {post.type === "workout" && (
-          <p className="text-[13px] text-muted">{WORKOUT_ICON[p.type as string] ?? "💪"} {t.social.didWorkout}</p>
+          <p className="flex items-center gap-1.5 text-[13px] font-semibold text-muted"><WorkoutIcon type={p.type as string} className="size-3.5" /> {t.social.didWorkout}</p>
         )}
         {post.type === "achievement" && p.kind === "level" && (
-          <div className="flex items-center gap-3 rounded-2xl bg-accent-soft p-4">
-            <div className="text-3xl">🏆</div>
-            <div className="text-[15px]"><span className="font-semibold">{post.author.name}</span> {t.social.reachedLevel} <span className="font-bold text-accent">{p.level as number}</span></div>
+          <div className="relative flex items-center gap-4 overflow-hidden rounded-2xl bg-accent-soft p-4">
+            <div className="varnish grid size-14 shrink-0 place-items-center rounded-2xl"><Trophy className="size-7" /></div>
+            <div className="relative text-[15px] leading-snug"><span className="font-bold">{post.author.name}</span> {t.social.reachedLevel} <span className="font-display text-[26px] font-semibold text-accent">{p.level as number}</span></div>
           </div>
         )}
         {post.type === "progress" && (
-          <div className="flex items-center gap-3 rounded-2xl bg-surface-2 p-4">
-            <div className="text-3xl">📈</div>
+          <div className="flex items-center gap-4 rounded-2xl bg-surface-2 p-4">
+            <IconTile tone="var(--good)" size={52}>{(p.change30 as number) > 0 ? <TrendingUp className="size-6" /> : <TrendingDown className="size-6" />}</IconTile>
             <div>
-              <div className="tabular text-xl font-bold" style={{ color: "var(--good)" }}>{(p.change30 as number) > 0 ? "+" : ""}{fmt(p.change30 as number, 1)} kg</div>
-              <div className="text-[12px] text-muted">30 {locale === "el" ? "ημέρες" : "days"} · 🔥 {p.streak as number}</div>
+              <div className="font-display tabular text-[26px] font-semibold leading-none" style={{ color: "var(--good)" }}>{(p.change30 as number) > 0 ? "+" : ""}{fmt(p.change30 as number, 1)} kg</div>
+              <div className="flex items-center gap-1 text-[12px] font-semibold text-muted">30 {locale === "el" ? "ημέρες" : "days"} · <Flame className="size-3" fill="currentColor" /> {p.streak as number}</div>
             </div>
           </div>
         )}
-        {post.text && <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed">{post.text}</p>}
+        {post.text && <p className="mt-2.5 whitespace-pre-wrap text-[15px] leading-relaxed">{post.text}</p>}
       </div>
 
-      {post.photoUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={post.photoUrl} alt="" className="mt-3 max-h-[480px] w-full object-cover" loading="lazy" />
-      )}
+      {post.photoUrl && <PostImage src={post.photoUrl} />}
 
       {post.type === "meal" && (
         <div className="mx-4 mt-3 rounded-2xl bg-surface-2 p-3">
@@ -132,7 +134,7 @@ export function PostCard({ post, onDeleted }: { post: PostView; onDeleted?: () =
 
       {post.type === "workout" && (
         <div className="mx-4 mt-3 rounded-2xl bg-surface-2 p-3">
-          <div className="text-[15px] font-semibold">{p.name as string}</div>
+          <div className="text-[15px] font-bold">{p.name as string}</div>
           <div className="mt-2 grid grid-cols-3 text-center">
             <div><div className="tabular font-bold">{formatDuration(p.durationSec as number)}</div><div className="text-[11px] text-muted">{t.workouts.duration.split(" ")[0]}</div></div>
             <div><div className="tabular font-bold">{p.distanceM ? ((p.distanceM as number) / 1000).toFixed(1) : "—"}</div><div className="text-[11px] text-muted">km</div></div>
@@ -141,14 +143,14 @@ export function PostCard({ post, onDeleted }: { post: PostView; onDeleted?: () =
         </div>
       )}
 
-      <footer className="mt-3 flex items-center gap-2 border-t border-border px-3 py-2">
-        <button onClick={() => doReact("W")} className={cn("flex h-9 items-center gap-1.5 rounded-full px-3 text-[14px] font-bold transition", r.mine === "W" ? "bg-good/15 text-good" : "text-muted hover:bg-surface-2")}>
+      <footer className="mt-4 flex items-center gap-2 border-t border-border px-3 py-2.5">
+        <button onClick={() => doReact("W")} className={cn("press flex h-9 min-w-14 items-center justify-center gap-1.5 rounded-full px-3.5 text-[14px] font-black transition-colors", r.mine === "W" ? "bg-good/15 text-good" : "bg-surface-2/60 text-muted hover:bg-surface-2")}>
           <span className={cn(bump === "W" && "animate-pop")}>W</span> <span className="tabular text-[13px]">{r.w || ""}</span>
         </button>
-        <button onClick={() => doReact("L")} className={cn("flex h-9 items-center gap-1.5 rounded-full px-3 text-[14px] font-bold transition", r.mine === "L" ? "bg-bad/15 text-bad" : "text-muted hover:bg-surface-2")}>
+        <button onClick={() => doReact("L")} className={cn("press flex h-9 min-w-14 items-center justify-center gap-1.5 rounded-full px-3.5 text-[14px] font-black transition-colors", r.mine === "L" ? "bg-bad/15 text-bad" : "bg-surface-2/60 text-muted hover:bg-surface-2")}>
           <span className={cn(bump === "L" && "animate-pop")}>L</span> <span className="tabular text-[13px]">{r.l || ""}</span>
         </button>
-        <button onClick={() => setShowComments(!showComments)} className="ml-auto flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-muted hover:bg-surface-2">
+        <button onClick={() => setShowComments(!showComments)} className="press ml-auto flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-bold text-muted hover:bg-surface-2">
           <MessageCircle className="size-4" /> {comments.length || ""}
         </button>
       </footer>
@@ -182,8 +184,8 @@ export function PostCard({ post, onDeleted }: { post: PostView; onDeleted?: () =
               start(async () => { const c = await addComment(post.id, text); if (c) setComments((x) => [...x, c]); });
             }}
           >
-            <input value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={500} placeholder={t.social.writeComment} className="h-10 flex-1 rounded-full bg-surface-2 px-4 text-[14px] outline-none focus:ring-2 focus:ring-accent" />
-            <button type="submit" disabled={!draft.trim()} className="h-10 rounded-full bg-accent px-4 text-[13px] font-semibold text-accent-fg disabled:opacity-40">↑</button>
+            <input value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={500} placeholder={t.social.writeComment} className="h-10 flex-1 rounded-full bg-surface-2 px-4 text-[16px] font-medium outline-none focus:ring-2 focus:ring-accent" enterKeyHint="send" />
+            <button type="submit" disabled={!draft.trim()} aria-label="Send" className="press varnish grid size-10 place-items-center rounded-full disabled:opacity-40"><ArrowUp className="size-4" strokeWidth={2.8} /></button>
           </form>
         </div>
       )}

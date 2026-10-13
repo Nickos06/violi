@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Flame, Globe, Users, UserPlus, Crown } from "lucide-react";
 import { getT, requireUser } from "@/lib/auth";
 import { feed, leaderboard, searchUsers } from "@/lib/social";
 import { relationSets } from "@/lib/social";
@@ -28,10 +29,10 @@ export default async function SocialPage({ searchParams }: { searchParams: Promi
 
   return (
     <div className="animate-rise">
-      <h1 className="pb-3 pt-4 text-[28px] font-bold tracking-tight">{t.social.title}</h1>
+      <h1 className="font-display pb-4 pt-4 text-[34px] font-semibold">{t.social.title}</h1>
       <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
         {tabs.map((x) => (
-          <Link key={x.k} href={`/social?tab=${x.k}`} className={cn("h-9 shrink-0 rounded-full px-4 text-[13px] font-semibold leading-9 transition", tab === x.k ? "bg-text text-bg" : "bg-surface-2 text-muted hover:text-text")}>
+          <Link key={x.k} href={`/social?tab=${x.k}`} className={cn("press h-10 shrink-0 rounded-full px-4 text-[13px] font-bold leading-10 transition-colors", tab === x.k ? "bg-text text-bg" : "border border-border bg-surface text-muted hover:text-text")}>
             {x.l}
           </Link>
         ))}
@@ -54,7 +55,7 @@ async function FeedTab({ userId, mode, name, color, url, visibility }: { userId:
     <div className="space-y-3">
       {mode === "following" && name && <Composer name={name} color={color!} url={url ?? null} defaultVisibility={visibility!} />}
       {posts.length === 0 ? (
-        <Empty icon="👋" title={t.social.noPosts}>
+        <Empty icon={<UserPlus className="size-6" />} title={t.social.noPosts}>
           <Link href="/social?tab=people" className="mt-2 text-[14px] font-semibold text-accent">{t.social.findFriends} →</Link>
         </Empty>
       ) : (
@@ -65,29 +66,29 @@ async function FeedTab({ userId, mode, name, color, url, visibility }: { userId:
 }
 
 async function Leaderboard({ userId, scope, metric }: { userId: string; scope: "friends" | "global"; metric: "week" | "xp" | "streak" | "minutes" }) {
-  const { t } = await getT();
+  const { t, locale } = await getT();
   const rows = await leaderboard(userId, scope, metric);
   const metrics = [
     { k: "week", l: t.social.weekly, u: "XP" },
     { k: "xp", l: t.social.allTime, u: "XP" },
-    { k: "streak", l: t.social.streaks, u: "🔥" },
+    { k: "streak", l: t.social.streaks, u: locale === "el" ? "ημ." : "d" },
     { k: "minutes", l: t.social.workoutsMinutes, u: t.common.min },
   ] as const;
   const unit = metrics.find((m) => m.k === metric)!.u;
   const podium = rows.slice(0, 3);
-  const medal = ["🥇", "🥈", "🥉"];
+  const medal = ["var(--text)", "var(--muted)", "var(--faint)"];
   return (
     <>
-      <div className="flex gap-1 rounded-xl bg-surface-2 p-1">
+      <div className="flex gap-1 rounded-2xl bg-surface-2 p-1">
         {(["friends", "global"] as const).map((s) => (
-          <Link key={s} href={`/social?tab=leaderboard&scope=${s}&m=${metric}`} className={cn("flex-1 rounded-lg py-1.5 text-center text-[13px] font-semibold", scope === s ? "bg-surface shadow" : "text-muted")}>
-            {s === "friends" ? `👥 ${t.social.friends}` : "🌍 Global"}
+          <Link key={s} href={`/social?tab=leaderboard&scope=${s}&m=${metric}`} className={cn("press flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[13px] font-bold", scope === s ? "bg-surface text-text shadow-sm" : "text-muted")}>
+            {s === "friends" ? <><Users className="size-3.5" /> {t.social.friends}</> : <><Globe className="size-3.5" /> Global</>}
           </Link>
         ))}
       </div>
       <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4">
         {metrics.map((m) => (
-          <Link key={m.k} href={`/social?tab=leaderboard&scope=${scope}&m=${m.k}`} className={cn("h-8 shrink-0 rounded-full border px-3 text-[12px] font-semibold leading-[30px]", metric === m.k ? "border-accent bg-accent-soft text-accent" : "border-border text-muted")}>
+          <Link key={m.k} href={`/social?tab=leaderboard&scope=${scope}&m=${m.k}`} className={cn("press h-9 shrink-0 rounded-full border px-3.5 text-[12.5px] font-bold leading-[34px]", metric === m.k ? "border-accent/50 bg-accent-soft text-accent" : "border-border text-muted")}>
             {m.l}
           </Link>
         ))}
@@ -100,10 +101,11 @@ async function Leaderboard({ userId, scope, metric }: { userId: string; scope: "
               <Link key={u.id} href={`/u/${u.username}`} className={cn("card flex flex-col items-center px-2 pb-4 text-center", i === 1 ? "pt-6" : "pt-4")}>
                 <div className="relative">
                   <Avatar name={u.name} color={u.avatarColor} url={u.avatarUrl} size={i === 1 ? 64 : 52} />
-                  <span className="absolute -bottom-1 -right-1 text-xl">{medal[i === 1 ? 0 : i === 0 ? 1 : 2]}</span>
+                  <span className="absolute -bottom-1 -right-1 grid size-7 place-items-center rounded-full border-[3px] border-surface text-[11px] font-black text-bg" style={{ background: medal[i === 1 ? 0 : i === 0 ? 1 : 2] }}>{i === 1 ? <Crown className="size-3.5" strokeWidth={2.6} /> : i === 0 ? 2 : 3}</span>
                 </div>
-                <div className="mt-2 w-full truncate text-[13px] font-semibold">{u.me ? t.social.you : u.name.split(" ")[0]}</div>
-                <div className="tabular text-[15px] font-bold" style={{ color: rankForLevel(u.level).color }}>{fmt(u.value)} <span className="text-[11px] text-muted">{unit}</span></div>
+                <div className="mt-3 w-full truncate text-[13px] font-bold">{u.me ? t.social.you : u.name.split(" ")[0]}</div>
+                <div className="font-display tabular text-[22px] font-semibold leading-tight" >{fmt(u.value)}</div>
+                <div className="text-[10.5px] font-bold uppercase tracking-wide text-faint">{unit}</div>
               </Link>
             ) : <div key={i} />,
           )}

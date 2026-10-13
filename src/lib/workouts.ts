@@ -3,11 +3,6 @@
 export const WORKOUT_TYPES = ["run", "ride", "swim", "walk", "hike", "strength", "hiit", "yoga", "football", "basketball", "tennis", "other"] as const;
 export type WorkoutType = (typeof WORKOUT_TYPES)[number];
 
-export const WORKOUT_ICON: Record<string, string> = {
-  run: "🏃", ride: "🚴", swim: "🏊", walk: "🚶", hike: "🥾", strength: "🏋️", hiit: "⚡", yoga: "🧘",
-  football: "⚽", basketball: "🏀", tennis: "🎾", other: "💪",
-};
-
 const MET: Record<string, number> = {
   run: 9.8, ride: 7.5, swim: 7.0, walk: 3.5, hike: 6.0, strength: 5.0, hiit: 8.0, yoga: 2.8,
   football: 7.0, basketball: 6.5, tennis: 7.3, other: 5.0,

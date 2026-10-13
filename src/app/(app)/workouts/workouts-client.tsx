@@ -2,14 +2,17 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { FileUp, Loader2, Lock, Plus, RefreshCw, Share2, Trash2 } from "lucide-react";
+import { Check, Dumbbell, FileUp, Heart, Loader2, Lock, Plus, RefreshCw, Share2, Trash2 } from "lucide-react";
 import { addWorkout, deleteWorkout, syncStrava, uploadFit } from "@/app/actions/workouts";
 import { shareWorkout } from "@/app/actions/social";
 import { useT } from "@/components/i18n-provider";
 import { Sheet } from "@/components/sheet";
 import { VisibilityPicker } from "@/components/meal-section";
-import { Button, Card, cn, Empty, Field, fmt, Input, Textarea } from "@/components/ui";
-import { WORKOUT_ICON, WORKOUT_TYPES, estimateWorkoutKcal, formatDuration, type WorkoutType } from "@/lib/workouts";
+import { PhotoPicker, type PickedPhoto } from "@/components/photo-picker";
+import { uploadImage } from "@/lib/image-client";
+import { Button, Card, cn, Empty, Field, fmt, IconTile, Input, Textarea } from "@/components/ui";
+import { WorkoutIcon } from "@/components/icons";
+import { WORKOUT_TYPES, estimateWorkoutKcal, formatDuration, type WorkoutType } from "@/lib/workouts";
 
 type Act = { id: string; type: string; name: string; source: string; date: string; durationSec: number; distanceM: number | null; kcal: number; avgHr: number | null };
 
@@ -29,7 +32,7 @@ export function WorkoutsClient(props: { activities: Act[]; openAdd: boolean; dat
     start(async () => {
       try {
         const r = await uploadFit(fd);
-        setMsg(`✓ ${t.workouts[r.type as WorkoutType] ?? r.type} · ${r.kcal} kcal`);
+        setMsg(`${t.workouts[r.type as WorkoutType] ?? r.type} · ${r.kcal} kcal`);
         router.refresh();
       } catch {
         setMsg(t.common.error);
@@ -54,31 +57,31 @@ export function WorkoutsClient(props: { activities: Act[]; openAdd: boolean; dat
         <input ref={fileRef} type="file" accept=".fit,application/octet-stream" hidden onChange={(e) => onFit(e.target.files?.[0])} />
       </div>
       <p className="mt-2 px-1 text-[12px] text-faint">{t.workouts.uploadFitD}</p>
-      {msg && <p className="mt-2 rounded-xl bg-surface-2 px-3 py-2 text-[13px]">{msg}</p>}
+      {msg && <p className="mt-3 flex items-center gap-2 rounded-2xl bg-surface-2 px-4 py-3 text-[13.5px] font-semibold"><Check className="size-4 text-good" strokeWidth={3} />{msg}</p>}
 
       {props.activities.length === 0 ? (
-        <Empty icon="🏃" title={t.workouts.none} />
+        <Card className="mt-5"><Empty icon={<Dumbbell className="size-6" />} title={t.workouts.none} /></Card>
       ) : (
         Object.entries(grouped).map(([date, acts]) => (
           <div key={date} className="mt-5">
-            <h3 className="mb-2 px-1 text-[12px] font-semibold uppercase tracking-wider text-muted">
+            <h3 className="mb-2.5 px-1 text-[12px] font-bold uppercase tracking-[0.12em] text-muted">
               {new Date(`${date}T12:00:00`).toLocaleDateString(locale === "el" ? "el-GR" : "en-GB", { weekday: "long", day: "numeric", month: "short" })}
             </h3>
             <Card className="divide-y divide-border overflow-hidden">
               {acts.map((a) => (
                 <div key={a.id} className="flex items-center gap-3 px-4 py-3">
-                  <div className="grid size-11 place-items-center rounded-xl bg-accent-soft text-xl">{WORKOUT_ICON[a.type] ?? "💪"}</div>
+                  <IconTile size={44}><WorkoutIcon type={a.type} className="size-5" /></IconTile>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[14px] font-semibold">{a.name}</div>
-                    <div className="flex flex-wrap items-center gap-x-1.5 text-[12px] text-muted">
+                    <div className="truncate text-[14.5px] font-bold">{a.name}</div>
+                    <div className="flex flex-wrap items-center gap-x-1.5 text-[12px] font-semibold text-faint">
                       <span>{formatDuration(a.durationSec)}</span>
                       {a.distanceM ? <span>· {(a.distanceM / 1000).toFixed(2)} km</span> : null}
-                      {a.avgHr ? <span>· ♥ {a.avgHr}</span> : null}
-                      <span>· {{ garmin: "Garmin", strava: "Strava", fit: ".FIT", manual: "✎" }[a.source] ?? a.source}</span>
+                      {a.avgHr ? <span className="inline-flex items-center gap-0.5">· <Heart className="size-3" fill="currentColor" /> {a.avgHr}</span> : null}
+                      {a.source !== "manual" && <span>· {{ garmin: "Garmin", strava: "Strava", fit: ".FIT" }[a.source] ?? a.source}</span>}
                       {a.source === "strava" && <span className="inline-flex items-center gap-0.5"><Lock className="size-3" /> {t.workouts.privateStrava}</span>}
                     </div>
                   </div>
-                  <div className="tabular text-right text-[14px] font-semibold text-good">{fmt(a.kcal)}<div className="text-[10px] font-normal text-faint">kcal</div></div>
+                  <div className="tabular text-right text-[15px] font-extrabold text-good">+{fmt(a.kcal)}<div className="text-[10px] font-semibold text-faint">kcal</div></div>
                   <div className="flex flex-col">
                     {props.canShare && a.source !== "strava" && (
                       <button onClick={() => setSharing(a)} className="grid size-8 place-items-center rounded-lg text-faint hover:text-text" aria-label={t.workouts.shareWorkout}><Share2 className="size-4" /></button>
@@ -112,8 +115,8 @@ function AddSheet({ open, onClose, date, weightKg }: { open: boolean; onClose: (
       <div className="space-y-4">
         <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5">
           {WORKOUT_TYPES.map((w) => (
-            <button key={w} onClick={() => setType(w)} className={cn("flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-[13px] font-semibold", type === w ? "bg-text text-bg" : "bg-surface-2 text-muted")}>
-              {WORKOUT_ICON[w]} {t.workouts[w]}
+            <button key={w} onClick={() => setType(w)} className={cn("press flex h-10 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-bold", type === w ? "bg-text text-bg" : "bg-surface-2 text-muted")}>
+              <WorkoutIcon type={w} className="size-4" /> {t.workouts[w]}
             </button>
           ))}
         </div>
@@ -148,13 +151,15 @@ function ShareSheet({ act, onClose, defaultVisibility }: { act: Act | null; onCl
   const router = useRouter();
   const [text, setText] = useState("");
   const [vis, setVis] = useState(defaultVisibility);
+  const [picked, setPicked] = useState<PickedPhoto>(null);
   const [pending, start] = useTransition();
   return (
     <Sheet open={!!act} onClose={onClose} title={t.workouts.shareWorkout}>
       {act && (
         <div className="space-y-3">
+          <PhotoPicker value={picked} onChange={setPicked} />
           <div className="flex items-center gap-3 rounded-2xl bg-surface-2 p-3">
-            <div className="text-2xl">{WORKOUT_ICON[act.type]}</div>
+            <IconTile><WorkoutIcon type={act.type} className="size-5" /></IconTile>
             <div>
               <div className="font-semibold">{act.name}</div>
               <div className="text-[13px] text-muted">{formatDuration(act.durationSec)} · {fmt(act.kcal)} kcal</div>
@@ -162,7 +167,12 @@ function ShareSheet({ act, onClose, defaultVisibility }: { act: Act | null; onCl
           </div>
           <Textarea placeholder={t.social.composer} value={text} onChange={(e) => setText(e.target.value)} maxLength={1000} />
           <VisibilityPicker value={vis} onChange={setVis} />
-          <Button className="w-full" disabled={pending} onClick={() => start(async () => { await shareWorkout({ activityId: act.id, text, visibility: vis }); onClose(); router.push("/social"); })}>
+          <Button className="w-full" disabled={pending} onClick={() => start(async () => {
+            const photoUrl = picked ? await uploadImage(picked.blob) : undefined;
+            await shareWorkout({ activityId: act.id, text, visibility: vis, photoUrl });
+            onClose();
+            router.push("/social");
+          })}>
             {t.social.post}
           </Button>
         </div>

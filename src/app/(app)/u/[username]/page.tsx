@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
-import { Lock } from "lucide-react";
+import { Flame, Lock, NotebookPen } from "lucide-react";
 import { getT, requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { relationSets, userPosts } from "@/lib/social";
 import { liveStreak } from "@/lib/gamification";
-import { ACHIEVEMENT_ICONS, ACHIEVEMENT_KEYS, levelFromXp, rankForLevel, RANKS } from "@/lib/levels";
+import { ACHIEVEMENT_KEYS, levelFromXp, rankForLevel, RANKS } from "@/lib/levels";
+import { ACHIEVEMENT_ICON, ACHIEVEMENT_TONE } from "@/components/icons";
 import { Avatar, Bar, Card, cn, Empty, fmt, LinkButton, SectionTitle } from "@/components/ui";
 import { PostCard } from "@/components/post-card";
 import { FollowButton } from "@/components/follow-button";
@@ -42,14 +43,14 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
             Lv {lv.level}
           </span>
         </div>
-        <h1 className="mt-4 text-2xl font-bold tracking-tight">{user.name}</h1>
+        <h1 className="font-display mt-5 text-[30px] font-semibold leading-tight">{user.name}</h1>
         <p className="text-[14px] text-muted">@{user.username}</p>
         {user.bio && <p className="mt-2 max-w-sm text-[14px]">{user.bio}</p>}
 
         <div className="mt-4 flex gap-6 text-center">
           <div><div className="tabular text-lg font-bold">{fmt(user._count.followers)}</div><div className="text-[12px] text-muted">{t.social.followers}</div></div>
           <div><div className="tabular text-lg font-bold">{fmt(user._count.following)}</div><div className="text-[12px] text-muted">{t.social.followingCount}</div></div>
-          <div><div className="tabular text-lg font-bold">🔥 {liveStreak(user)}</div><div className="text-[12px] text-muted">Streak</div></div>
+          <div><div className="tabular flex items-center justify-center gap-1 text-lg font-extrabold"><Flame className="size-4" fill="currentColor" />{liveStreak(user)}</div><div className="text-[12px] font-semibold text-muted">Streak</div></div>
         </div>
 
         <div className="mt-5 flex w-full max-w-xs gap-2">
@@ -72,7 +73,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: rank.color }}>{t.ranks[rank.key]}</div>
-                <div className="text-xl font-bold">{t.profile.level} {lv.level}</div>
+                <div className="font-display text-[26px] font-semibold">{t.profile.level} {lv.level}</div>
               </div>
               <div className="text-right">
                 <div className="tabular text-[13px] font-semibold">{fmt(lv.current)} / {fmt(lv.needed)} XP</div>
@@ -88,10 +89,17 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
             {ACHIEVEMENT_KEYS.map((k) => {
               const [title, desc] = t.achievements[k];
               const has = unlocked.has(k);
+              const Icon = ACHIEVEMENT_ICON[k];
+              const tone = ACHIEVEMENT_TONE[k];
               return (
-                <div key={k} title={desc} className={cn("card flex flex-col items-center gap-1 px-1 py-3 text-center", !has && "opacity-35 grayscale")}>
-                  <span className="text-2xl">{ACHIEVEMENT_ICONS[k]}</span>
-                  <span className="line-clamp-2 text-[11px] font-semibold leading-tight">{title}</span>
+                <div key={k} title={desc} className={cn("card flex flex-col items-center gap-2 px-1.5 py-3.5 text-center", !has && "opacity-40")}>
+                  <span
+                    className="grid size-11 place-items-center rounded-full"
+                    style={has ? { color: tone, background: `color-mix(in oklab, ${tone} 16%, transparent)`, boxShadow: `inset 0 0 0 1.5px color-mix(in oklab, ${tone} 45%, transparent)` } : { color: "var(--faint)", background: "var(--surface-2)" }}
+                  >
+                    {has ? <Icon className="size-5" strokeWidth={2.2} /> : <Lock className="size-4" />}
+                  </span>
+                  <span className="line-clamp-2 text-[11px] font-bold leading-tight">{title}</span>
                 </div>
               );
             })}
@@ -99,7 +107,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
           <SectionTitle>{t.profile.posts}</SectionTitle>
           <div className="space-y-3">
-            {posts.length === 0 ? <Empty icon="📝" title={t.social.noPosts} /> : posts.map((p) => <PostCard key={p.id} post={p} />)}
+            {posts.length === 0 ? <Card><Empty icon={<NotebookPen className="size-6" />} title={t.social.noPosts} /></Card> : posts.map((p) => <PostCard key={p.id} post={p} />)}
           </div>
         </>
       )}

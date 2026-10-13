@@ -1,34 +1,44 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Barcode, Camera, ImagePlus, Loader2, MessageSquareText, Search, Sparkles, Star, Trash2, Zap } from "lucide-react";
+import {
+  Barcode, Camera, ChefHat, Check, ImagePlus, Loader2, MessageSquareText, Plus, RotateCcw, ScanLine, Search, Sparkles, Star, Trash2, Zap,
+} from "lucide-react";
 import { createFood, logEstimated, logFood, quickAdd, toggleFavorite } from "@/app/actions/food";
 import { useT } from "@/components/i18n-provider";
 import { Sheet } from "@/components/sheet";
-import { Button, Card, cn, Field, fmt, Input, Textarea } from "@/components/ui";
+import { FoodSearch, type PickedFood } from "@/components/food-search";
+import { MacroTiles } from "@/components/meal-section";
+import { SAVED_MEAL_ICON, MEAL_SLOT_ICON } from "@/components/icons";
+import { Button, Card, cn, Field, fmt, IconTile, Input, Textarea } from "@/components/ui";
 import type { FoodItem } from "@/lib/foods";
 import type { MealEstimate } from "@/lib/ai";
+import type { MealIconKey } from "@/lib/meal-icons";
 
-type Tab = "search" | "scan" | "describe" | "barcode" | "quick";
+type Tab = "search" | "meals" | "scan" | "describe" | "barcode" | "quick";
 type Meal = "breakfast" | "lunch" | "dinner" | "snack";
+export type SavedMealCard = { id: string; name: string; icon: string; items: number; totalGrams: number; portionG: number; food: FoodItem };
 
-export function LogClient({ initialMeal, date, ai, initialTab }: { initialMeal: string; date: string; ai: boolean; initialTab: string }) {
+export function LogClient({ initialMeal, date, ai, initialTab, savedMeals }: { initialMeal: string; date: string; ai: boolean; initialTab: string; savedMeals: SavedMealCard[] }) {
   const { t } = useT();
   const router = useRouter();
   const [meal, setMeal] = useState<Meal>(initialMeal as Meal);
   const [tab, setTab] = useState<Tab>(initialTab as Tab);
-  const [selected, setSelected] = useState<(FoodItem & { lastGrams?: number }) | null>(null);
+  const [selected, setSelected] = useState<PickedFood | null>(null);
+  const [selectedMeal, setSelectedMeal] = useState<SavedMealCard | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const done = () => {
     setToast(t.log.logged);
-    setTimeout(() => setToast(null), 1600);
+    setTimeout(() => setToast(null), 1800);
     router.refresh();
   };
 
   const tabs: { k: Tab; label: string; icon: typeof Search }[] = [
     { k: "search", label: t.log.search, icon: Search },
+    { k: "meals", label: t.nav.meals, icon: ChefHat },
     { k: "scan", label: t.log.scan, icon: Camera },
     { k: "describe", label: t.log.describe, icon: MessageSquareText },
     { k: "barcode", label: t.log.barcode, icon: Barcode },
@@ -36,144 +46,159 @@ export function LogClient({ initialMeal, date, ai, initialTab }: { initialMeal: 
   ];
 
   return (
-    <div className="animate-rise pt-3">
-      <div className="flex items-center justify-between">
-        <h1 className="text-[26px] font-bold tracking-tight">{t.log.title} {t.meals[meal].toLowerCase()}</h1>
-        <button onClick={() => router.push(`/today?d=${date}`)} className="text-[14px] font-semibold text-accent">{t.common.done}</button>
+    <div className="animate-rise pt-4">
+      <div className="flex items-end justify-between">
+        <div>
+          <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-muted">{t.log.title}</p>
+          <h1 className="font-display text-[34px] font-semibold leading-tight">{t.meals[meal]}</h1>
+        </div>
+        <button onClick={() => router.push(`/today?d=${date}`)} className="press mb-1 h-9 rounded-full bg-surface-2 px-4 text-[14px] font-bold text-text hover:bg-surface-3">
+          {t.common.done}
+        </button>
       </div>
 
-      {/* Meal picker */}
-      <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4">
-        {(["breakfast", "lunch", "dinner", "snack"] as const).map((m) => (
-          <button key={m} onClick={() => setMeal(m)} className={cn("h-9 shrink-0 rounded-full px-4 text-[13px] font-semibold transition", meal === m ? "bg-text text-bg" : "bg-surface-2 text-muted hover:text-text")}>
-            {t.meals[m]}
-          </button>
-        ))}
+      {/* Meal slot */}
+      <div className="mt-4 flex gap-1 rounded-2xl border border-border bg-surface/70 p-1">
+        {(["breakfast", "lunch", "dinner", "snack"] as const).map((m) => {
+          const I = MEAL_SLOT_ICON[m];
+          return (
+            <button
+              key={m}
+              onClick={() => setMeal(m)}
+              className={cn("press flex h-10 flex-auto items-center justify-center gap-1.5 rounded-xl px-2.5 text-[12.5px] font-bold transition-colors", meal === m ? "bg-text text-bg" : "text-muted hover:text-text")}
+            >
+              <I className="size-3.5 shrink-0 max-[420px]:hidden" strokeWidth={2.4} /> {t.meals[m]}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Tabs */}
-      <div className="mt-4 grid grid-cols-5 gap-1 rounded-2xl bg-surface-2 p-1">
+      {/* Method */}
+      <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1">
         {tabs.map(({ k, label, icon: Icon }) => (
-          <button key={k} onClick={() => setTab(k)} className={cn("flex flex-col items-center gap-1 rounded-xl py-2 text-[11px] font-semibold transition", tab === k ? "bg-surface text-text shadow" : "text-muted")}>
-            <Icon className="size-[18px]" />
+          <button
+            key={k}
+            onClick={() => setTab(k)}
+            className={cn(
+              "press flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-4 text-[13px] font-bold transition-colors",
+              tab === k ? "border-accent/50 bg-accent-soft text-accent" : "border-border bg-surface text-muted hover:text-text",
+            )}
+          >
+            <Icon className="size-4" strokeWidth={2.3} />
             {label}
           </button>
         ))}
       </div>
 
-      <div className="mt-4">
-        {tab === "search" && <SearchTab onPick={setSelected} />}
-        {tab === "scan" && <AiTab mode="photo" ai={ai} meal={meal} date={date} onDone={done} />}
-        {tab === "describe" && <AiTab mode="text" ai={ai} meal={meal} date={date} onDone={done} />}
-        {tab === "barcode" && <BarcodeTab onPick={setSelected} />}
-        {tab === "quick" && <QuickTab meal={meal} date={date} onDone={done} onCreated={setSelected} />}
+      <div className="mt-4" key={tab}>
+        <div className="animate-rise">
+          {tab === "search" && <FoodSearch onPick={setSelected} />}
+          {tab === "meals" && <MealsTab meals={savedMeals} onPick={setSelectedMeal} />}
+          {tab === "scan" && <AiTab mode="photo" ai={ai} meal={meal} date={date} onDone={done} />}
+          {tab === "describe" && <AiTab mode="text" ai={ai} meal={meal} date={date} onDone={done} />}
+          {tab === "barcode" && <BarcodeTab onPick={setSelected} />}
+          {tab === "quick" && <QuickTab meal={meal} date={date} onDone={done} onCreated={setSelected} />}
+        </div>
       </div>
 
       <FoodSheet item={selected} meal={meal} date={date} source={tab === "barcode" ? "barcode" : "search"} onClose={() => setSelected(null)} onLogged={() => { setSelected(null); done(); }} />
+      <SavedMealSheet meal={selectedMeal} slot={meal} date={date} onClose={() => setSelectedMeal(null)} onLogged={() => { setSelectedMeal(null); done(); }} />
 
       {toast && (
-        <div className="animate-rise fixed inset-x-0 bottom-28 z-50 mx-auto w-fit rounded-full bg-text px-5 py-2.5 text-[14px] font-semibold text-bg shadow-xl md:bottom-10">
-          ✓ {toast}
+        <div className="animate-rise fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+96px)] z-50 mx-auto flex w-fit items-center gap-2 rounded-full bg-text px-5 py-3 text-[14px] font-bold text-bg shadow-2xl md:bottom-10">
+          <Check className="size-4" strokeWidth={3} /> {toast}
         </div>
       )}
     </div>
   );
 }
 
-// ---------------- Search ----------------
+// ---------------- Saved meals ----------------
 
-function FoodRow({ f, onClick }: { f: FoodItem & { lastGrams?: number }; onClick: () => void }) {
+function MealsTab({ meals, onPick }: { meals: SavedMealCard[]; onPick: (m: SavedMealCard) => void }) {
   const { t } = useT();
-  const sourceLabel: Record<string, string> = { off: "Open Food Facts", usda: "USDA", ai: "AI", custom: "★", seed: "" };
   return (
-    <button onClick={onClick} className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-surface-2">
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-[14px] font-medium">{f.name}</div>
-        <div className="truncate text-[12px] text-muted">
-          {f.brand ? `${f.brand} · ` : ""}
-          {f.lastGrams ? `${fmt(f.lastGrams)} g` : f.servingLabel ?? `${fmt(f.servingG)} g`}
-          {sourceLabel[f.source] ? ` · ${sourceLabel[f.source]}` : ""}
-        </div>
+    <div>
+      <div className="grid grid-cols-2 gap-3">
+        {meals.map((m) => {
+          const Icon = SAVED_MEAL_ICON[m.icon as MealIconKey] ?? ChefHat;
+          return (
+            <button key={m.id} onClick={() => onPick(m)} className="card press flex flex-col items-start gap-3 p-4 text-left">
+              <IconTile size={42}><Icon className="size-5" strokeWidth={2.2} /></IconTile>
+              <div className="w-full min-w-0">
+                <div className="line-clamp-2 text-[14.5px] font-bold leading-snug">{m.name}</div>
+                <div className="tabular mt-1 text-[12px] font-semibold text-faint">
+                  {fmt(m.food.kcal)} kcal/100g · {m.items} {t.saved.items}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+        <Link href="/meals/new" className="press flex min-h-[132px] flex-col items-start justify-between gap-3 rounded-[var(--radius-card)] border border-dashed border-border-strong p-4 text-muted hover:border-accent/50 hover:text-text">
+          <div className="grid size-[42px] place-items-center rounded-[14px] bg-surface-2"><Plus className="size-5" strokeWidth={2.4} /></div>
+          <span className="text-[14.5px] font-bold">{t.saved.new}</span>
+        </Link>
       </div>
-      <div className="text-right">
-        <div className="tabular text-[14px] font-semibold">{fmt((f.kcal * (f.lastGrams ?? f.servingG)) / 100)}</div>
-        <div className="text-[11px] text-faint">{t.common.kcal}</div>
-      </div>
-    </button>
-  );
-}
-
-function SearchTab({ onPick }: { onPick: (f: FoodItem) => void }) {
-  const { t } = useT();
-  const [q, setQ] = useState("");
-  const [local, setLocal] = useState<FoodItem[]>([]);
-  const [online, setOnline] = useState<FoodItem[]>([]);
-  const [loadingOnline, setLoadingOnline] = useState(false);
-  const [recent, setRecent] = useState<{ recent: (FoodItem & { lastGrams?: number })[]; favorites: FoodItem[] } | null>(null);
-
-  useEffect(() => {
-    fetch("/api/foods/recent").then((r) => r.json()).then(setRecent).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (q.trim().length < 2) { setLocal([]); setOnline([]); return; }
-    const ctrl = new AbortController();
-    const id = setTimeout(async () => {
-      try {
-        const r = await fetch(`/api/foods/search?q=${encodeURIComponent(q)}`, { signal: ctrl.signal });
-        setLocal((await r.json()).items ?? []);
-        setLoadingOnline(true);
-        const o = await fetch(`/api/foods/search?online=1&q=${encodeURIComponent(q)}`, { signal: ctrl.signal });
-        setOnline((await o.json()).items ?? []);
-      } catch {}
-      setLoadingOnline(false);
-    }, 280);
-    return () => { clearTimeout(id); ctrl.abort(); };
-  }, [q]);
-
-  return (
-    <>
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 size-[18px] -translate-y-1/2 text-faint" />
-        <Input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.log.searchPlaceholder} className="h-12 pl-10" />
-      </div>
-
-      {q.trim().length < 2 ? (
-        <>
-          {!!recent?.favorites.length && (
-            <List title={t.log.favorites}>{recent.favorites.map((f) => <FoodRow key={f.key} f={f} onClick={() => onPick(f)} />)}</List>
-          )}
-          {!!recent?.recent.length && (
-            <List title={t.log.recent}>{recent.recent.map((f) => <FoodRow key={f.key} f={f} onClick={() => onPick(f)} />)}</List>
-          )}
-        </>
-      ) : (
-        <>
-          {local.length > 0 && <List title={t.log.results}>{local.map((f) => <FoodRow key={f.key} f={f} onClick={() => onPick(f)} />)}</List>}
-          <List title={t.log.online} trailing={loadingOnline ? <Loader2 className="size-4 animate-spin text-muted" /> : null}>
-            {online.length === 0 && !loadingOnline ? <p className="px-4 py-4 text-[13px] text-faint">—</p> : online.map((f) => <FoodRow key={f.key} f={f} onClick={() => onPick(f)} />)}
-          </List>
-        </>
+      {meals.length === 0 && <p className="mt-4 px-1 text-[13.5px] leading-relaxed text-muted">{t.saved.subtitle}</p>}
+      {meals.length > 0 && (
+        <Link href="/meals" className="mt-4 inline-block px-1 text-[13px] font-bold text-accent">{t.saved.manage} →</Link>
       )}
-    </>
+    </div>
   );
 }
 
-function List({ title, children, trailing }: { title: string; children: React.ReactNode; trailing?: React.ReactNode }) {
+function SavedMealSheet({ meal, slot, date, onClose, onLogged }: { meal: SavedMealCard | null; slot: Meal; date: string; onClose: () => void; onLogged: () => void }) {
+  const { t } = useT();
+  const [grams, setGrams] = useState("");
+  const [pending, start] = useTransition();
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (meal) setGrams(String(Math.round(meal.portionG)));
+  }, [meal]);
+  const g = Number(grams) || 0;
+  const f = g / 100;
+  const Icon = meal ? SAVED_MEAL_ICON[meal.icon as MealIconKey] ?? ChefHat : ChefHat;
+  const chips = meal
+    ? Array.from(new Set([Math.round(meal.portionG), Math.round(meal.totalGrams / 2), Math.round(meal.totalGrams)])).filter((x) => x > 0).sort((a, b) => a - b)
+    : [];
   return (
-    <div className="mt-5">
-      <div className="mb-2 flex items-center justify-between px-1">
-        <h3 className="text-[12px] font-semibold uppercase tracking-wider text-muted">{title}</h3>
-        {trailing}
-      </div>
-      <Card className="divide-y divide-border overflow-hidden">{children}</Card>
-    </div>
+    <Sheet open={!!meal} onClose={onClose} title={meal && <span className="flex items-center gap-3"><IconTile size={38}><Icon className="size-5" /></IconTile>{meal.name}</span>}>
+      {meal && (
+        <div className="space-y-4">
+          <div>
+            <p className="mb-2 px-1 text-[13px] font-bold text-muted">{t.saved.howMuch}</p>
+            <div className="relative">
+              <Input
+                ref={inputRef} data-autofocus="" type="number" inputMode="decimal" value={grams} onChange={(e) => setGrams(e.target.value)}
+                className="font-display h-20 pr-14 text-center text-[40px] font-semibold"
+              />
+              <span className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 text-lg font-bold text-muted">g</span>
+            </div>
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              {chips.map((c) => (
+                <button key={c} onClick={() => setGrams(String(c))} className={cn("press h-9 rounded-full px-3.5 text-[13px] font-bold", Number(grams) === c ? "bg-text text-bg" : "bg-surface-2 text-muted")}>
+                  {c === Math.round(meal.totalGrams) ? `${t.saved.whole} · ${c} g` : c === Math.round(meal.portionG) ? `${t.saved.portionOf} · ${c} g` : `${c} g`}
+                </button>
+              ))}
+            </div>
+          </div>
+          <MacroTiles kcal={meal.food.kcal * f} protein={meal.food.protein * f} carbs={meal.food.carbs * f} fat={meal.food.fat * f} />
+          <Button
+            size="lg" className="w-full" disabled={pending || g <= 0}
+            onClick={() => start(async () => { await logFood({ item: meal.food, grams: g, meal: slot, date, source: "meal" }); onLogged(); })}
+          >
+            {pending ? <Loader2 className="size-5 animate-spin" /> : `${t.log.logIt} · ${fmt(meal.food.kcal * f)} kcal`}
+          </Button>
+          <Link href={`/meals/${meal.id}`} className="block text-center text-[13px] font-bold text-muted hover:text-text">{t.saved.edit}</Link>
+        </div>
+      )}
+    </Sheet>
   );
 }
 
 // ---------------- Food detail sheet ----------------
 
-function FoodSheet({ item, meal, date, source, onClose, onLogged }: { item: (FoodItem & { lastGrams?: number }) | null; meal: Meal; date: string; source: string; onClose: () => void; onLogged: () => void }) {
+function FoodSheet({ item, meal, date, source, onClose, onLogged }: { item: PickedFood | null; meal: Meal; date: string; source: string; onClose: () => void; onLogged: () => void }) {
   const { t } = useT();
   const [grams, setGrams] = useState("");
   const [fav, setFav] = useState(false);
@@ -185,47 +210,35 @@ function FoodSheet({ item, meal, date, source, onClose, onLogged }: { item: (Foo
   const g = Number(grams) || 0;
   const f = g / 100;
   const microCount = Object.keys(item.micros ?? {}).length;
-  const presets = Array.from(new Set([item.servingG, 100, item.servingG * 2].map((x) => Math.round(x)))).filter((x) => x > 0);
+  const presets = Array.from(new Set([item.servingG, 100, item.servingG * 2].map((x) => Math.round(x)))).filter((x) => x > 0).sort((a, b) => a - b);
 
   return (
     <Sheet open={!!item} onClose={onClose} title={item.name}>
       <div className="space-y-4">
-        {item.brand && <p className="-mt-3 text-[13px] text-muted">{item.brand}</p>}
-        <div className="grid grid-cols-4 gap-2 text-center">
-          {[
-            { l: "kcal", v: item.kcal * f, c: "var(--text)" },
-            { l: t.macros.protein, v: item.protein * f, c: "var(--protein)" },
-            { l: t.macros.carbs, v: item.carbs * f, c: "var(--carbs)" },
-            { l: t.macros.fat, v: item.fat * f, c: "var(--fat)" },
-          ].map((m) => (
-            <div key={m.l} className="rounded-2xl bg-surface-2 py-2.5">
-              <div className="tabular text-[18px] font-bold" style={{ color: m.c }}>{fmt(m.v)}</div>
-              <div className="truncate px-1 text-[11px] text-muted">{m.l}</div>
-            </div>
-          ))}
-        </div>
-        <div className="flex items-center gap-2">
-          <Input type="number" inputMode="decimal" value={grams} onChange={(e) => setGrams(e.target.value)} className="h-14 text-center text-2xl font-bold" />
-          <span className="text-muted">g</span>
+        {item.brand && <p className="-mt-3 text-[13px] font-semibold text-muted">{item.brand}</p>}
+        <MacroTiles kcal={item.kcal * f} protein={item.protein * f} carbs={item.carbs * f} fat={item.fat * f} />
+        <div className="relative">
+          <Input type="number" inputMode="decimal" value={grams} onChange={(e) => setGrams(e.target.value)} className="font-display h-16 pr-14 text-center text-[32px] font-semibold" />
+          <span className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 font-bold text-muted">g</span>
         </div>
         <div className="flex flex-wrap gap-2">
           {presets.map((p) => (
-            <button key={p} onClick={() => setGrams(String(p))} className={cn("h-8 rounded-full px-3 text-[13px] font-semibold", Number(grams) === p ? "bg-text text-bg" : "bg-surface-2 text-muted")}>
-              {p === Math.round(item.servingG) && item.servingLabel ? item.servingLabel : `${p} g`}
+            <button key={p} onClick={() => setGrams(String(p))} className={cn("press h-9 rounded-full px-3.5 text-[13px] font-bold", Number(grams) === p ? "bg-text text-bg" : "bg-surface-2 text-muted")}>
+              {p === Math.round(item.servingG) && item.servingLabel ? `${item.servingLabel} · ${p} g` : `${p} g`}
             </button>
           ))}
         </div>
-        <p className="text-[12px] text-faint">
+        <p className="text-[12px] font-semibold text-faint">
           {t.macros.fiber} {fmt(item.fiber * f, 1)}g · {t.macros.sugar} {fmt(item.sugar * f, 1)}g{microCount > 0 && ` · ${microCount} ${t.today.micros.toLowerCase()}`}
         </p>
         <div className="flex gap-2">
           {item.id && (
-            <Button variant="secondary" aria-label="Favorite" onClick={() => start(async () => setFav(await toggleFavorite(item.id!)))}>
-              <Star className={cn("size-4", fav && "fill-current text-warn")} />
+            <Button variant="secondary" size="lg" aria-label="Favorite" className="w-14 px-0" onClick={() => start(async () => setFav(await toggleFavorite(item.id!)))}>
+              <Star className={cn("size-5", fav && "fill-current text-warn")} />
             </Button>
           )}
           <Button className="flex-1" size="lg" disabled={pending || g <= 0} onClick={() => start(async () => { await logFood({ item, grams: g, meal, date, source }); onLogged(); })}>
-            {pending ? <Loader2 className="size-4 animate-spin" /> : t.log.logIt}
+            {pending ? <Loader2 className="size-5 animate-spin" /> : `${t.log.logIt} · ${fmt(item.kcal * f)} kcal`}
           </Button>
         </div>
       </div>
@@ -261,7 +274,14 @@ function AiTab({ mode, ai, meal, date, onDone }: { mode: "photo" | "text"; ai: b
   const [result, setResult] = useState<{ est: MealEstimate; items: EstItem[]; photoUrl: string | null } | null>(null);
   const [pending, start] = useTransition();
 
-  if (!ai) return <Card className="p-5 text-[14px] text-muted">{t.log.noAi}</Card>;
+  if (!ai) {
+    return (
+      <Card className="flex items-start gap-3.5 p-5">
+        <IconTile><Sparkles className="size-5" /></IconTile>
+        <p className="text-[14px] leading-relaxed text-muted">{t.log.noAi}</p>
+      </Card>
+    );
+  }
 
   const run = async (body: Record<string, string>) => {
     setBusy(true); setErr(null); setResult(null);
@@ -303,34 +323,40 @@ function AiTab({ mode, ai, meal, date, onDone }: { mode: "photo" | "text"; ai: b
     <div className="space-y-4">
       {mode === "photo" ? (
         !preview ? (
-          <Card className="flex flex-col items-center p-8 text-center">
-            <div className="grid size-16 place-items-center rounded-3xl bg-accent-soft text-accent"><Camera className="size-7" /></div>
-            <h2 className="mt-4 text-lg font-bold">{t.log.scanTitle}</h2>
-            <p className="mt-1 max-w-xs text-[14px] text-muted">{t.log.scanSub}</p>
-            <div className="mt-6 flex w-full gap-2">
-              <Button className="flex-1" onClick={() => cam.current?.click()}><Camera className="size-4" /> {t.log.takePhoto}</Button>
-              <Button variant="secondary" className="flex-1" onClick={() => lib.current?.click()}><ImagePlus className="size-4" /> {t.log.choosePhoto}</Button>
+          <Card className="relative flex flex-col items-center overflow-hidden px-6 pb-6 pt-10 text-center">
+            <div className="varnish relative grid size-[72px] place-items-center rounded-[24px]">
+              <ScanLine className="size-8" strokeWidth={2.2} />
+            </div>
+            <h2 className="font-display relative mt-5 text-[24px] font-semibold">{t.log.scanTitle}</h2>
+            <p className="relative mt-1.5 max-w-xs text-[14px] leading-relaxed text-muted">{t.log.scanSub}</p>
+            <div className="relative mt-7 grid w-full grid-cols-2 gap-2">
+              <Button onClick={() => cam.current?.click()}><Camera className="size-[18px]" /> {t.log.takePhoto}</Button>
+              <Button variant="secondary" onClick={() => lib.current?.click()}><ImagePlus className="size-[18px]" /> {t.log.choosePhoto}</Button>
             </div>
             <input ref={cam} type="file" accept="image/*" capture="environment" hidden onChange={(e) => onFile(e.target.files?.[0])} />
             <input ref={lib} type="file" accept="image/*" hidden onChange={(e) => onFile(e.target.files?.[0])} />
           </Card>
         ) : (
-          <div className="relative overflow-hidden rounded-[var(--radius-card)]">
+          <div className="relative overflow-hidden rounded-[var(--radius-card)] border border-border">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={preview} alt="" className="max-h-80 w-full object-cover" />
+            <img src={preview} alt="" className={cn("max-h-80 w-full object-cover transition-[filter] duration-500", busy && "blur-[2px] brightness-75")} />
             {busy && (
-              <div className="absolute inset-0 grid place-items-center bg-black/50 backdrop-blur-sm">
-                <div className="flex items-center gap-2 rounded-full bg-black/60 px-4 py-2 text-[14px] font-semibold text-white"><Sparkles className="size-4 animate-pulse" /> {t.log.analyzing}</div>
+              <div className="absolute inset-0 grid place-items-center">
+                <div className="flex items-center gap-2 rounded-full bg-black/65 px-4 py-2.5 text-[14px] font-bold text-white backdrop-blur">
+                  <Sparkles className="size-4 animate-pulse" /> {t.log.analyzing}
+                </div>
               </div>
             )}
             {!busy && (
-              <button onClick={() => { setPreview(null); setResult(null); }} className="absolute right-3 top-3 rounded-full bg-black/60 px-3 py-1.5 text-[12px] font-semibold text-white">↺ {t.log.takePhoto}</button>
+              <button onClick={() => { setPreview(null); setResult(null); }} className="press absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-2 text-[12px] font-bold text-white backdrop-blur">
+                <RotateCcw className="size-3.5" /> {t.log.takePhoto}
+              </button>
             )}
           </div>
         )
       ) : (
-        <Card className="p-4">
-          <h2 className="font-semibold">{t.log.describeTitle}</h2>
+        <Card className="p-5">
+          <h2 className="font-display text-[22px] font-semibold">{t.log.describeTitle}</h2>
           <Textarea className="mt-3" value={text} onChange={(e) => setText(e.target.value)} placeholder={t.log.describePlaceholder} maxLength={1000} />
           <Button className="mt-3 w-full" disabled={busy || text.trim().length < 3} onClick={() => run({ text })}>
             {busy ? <><Loader2 className="size-4 animate-spin" /> {t.log.analyzing}</> : <><Sparkles className="size-4" /> {t.log.analyze}</>}
@@ -338,37 +364,40 @@ function AiTab({ mode, ai, meal, date, onDone }: { mode: "photo" | "text"; ai: b
         </Card>
       )}
 
-      {err && <p className="rounded-xl bg-bad/10 px-3 py-2.5 text-sm text-bad">{err}</p>}
+      {err && <p className="rounded-2xl bg-bad/10 px-4 py-3 text-sm font-semibold text-bad">{err}</p>}
 
       {result && total && (
         <div className="animate-rise">
-          <div className="mb-2 flex items-end justify-between px-1">
-            <div>
-              <h3 className="text-[12px] font-semibold uppercase tracking-wider text-muted">{t.log.aiResult}</h3>
-              <p className="text-[17px] font-bold">{result.est.mealName}</p>
+          <div className="mb-2.5 flex items-end justify-between px-1">
+            <div className="min-w-0">
+              <h3 className="text-[12px] font-bold uppercase tracking-[0.12em] text-muted">{t.log.aiResult}</h3>
+              <p className="font-display truncate text-[22px] font-semibold">{result.est.mealName}</p>
             </div>
-            <div className="tabular text-right text-[20px] font-bold">{fmt(total.kcal)} <span className="text-[12px] font-normal text-muted">kcal</span></div>
+            <div className="tabular shrink-0 text-right text-[22px] font-extrabold">{fmt(total.kcal)} <span className="text-[12px] font-semibold text-muted">kcal</span></div>
           </div>
           <Card className="divide-y divide-border overflow-hidden">
             {result.items.map((it, i) => (
               <div key={i} className="flex items-center gap-3 px-4 py-3">
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[14px] font-medium">{it.name}</div>
-                  <div className="tabular text-[12px] text-muted">
-                    {fmt(it.kcal)} kcal · <span style={{ color: "var(--protein)" }}>P {fmt(it.protein)}</span> · <span style={{ color: "var(--carbs)" }}>C {fmt(it.carbs)}</span> · <span style={{ color: "var(--fat)" }}>F {fmt(it.fat)}</span>
+                  <div className="truncate text-[14.5px] font-semibold">{it.name}</div>
+                  <div className="tabular flex gap-2 text-[12px] font-semibold text-faint">
+                    <span>{fmt(it.kcal)} kcal</span>
+                    <span style={{ color: "var(--protein)" }}>P {fmt(it.protein)}</span>
+                    <span style={{ color: "var(--carbs)" }}>C {fmt(it.carbs)}</span>
+                    <span style={{ color: "var(--fat)" }}>F {fmt(it.fat)}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <input type="number" inputMode="decimal" value={Math.round(it.grams)} onChange={(e) => scaleItem(i, Number(e.target.value) || 0)} className="h-9 w-16 rounded-lg bg-surface-2 text-center text-[14px] font-semibold outline-none focus:ring-2 focus:ring-accent" />
-                  <span className="text-[12px] text-muted">g</span>
-                  <button onClick={() => setResult((r) => r && { ...r, items: r.items.filter((_, j) => j !== i) })} className="grid size-8 place-items-center rounded-lg text-faint hover:text-bad" aria-label={t.common.delete}>
+                  <input type="number" inputMode="decimal" value={Math.round(it.grams)} onChange={(e) => scaleItem(i, Number(e.target.value) || 0)} className="h-10 w-[68px] rounded-xl bg-surface-2 text-center text-[16px] font-bold outline-none focus:ring-2 focus:ring-accent" />
+                  <span className="text-[12px] font-bold text-muted">g</span>
+                  <button onClick={() => setResult((r) => r && { ...r, items: r.items.filter((_, j) => j !== i) })} className="press grid size-9 place-items-center rounded-xl text-faint hover:text-bad" aria-label={t.common.delete}>
                     <Trash2 className="size-4" />
                   </button>
                 </div>
               </div>
             ))}
           </Card>
-          <p className="mt-2 px-1 text-[12px] text-faint">{result.est.notes ? `${result.est.notes} ` : ""}{t.log.aiHint}</p>
+          <p className="mt-2.5 px-1 text-[12px] leading-relaxed text-faint">{result.est.notes ? `${result.est.notes} ` : ""}{t.log.aiHint}</p>
           <Button
             size="lg" className="mt-4 w-full" disabled={pending || result.items.length === 0}
             onClick={() => start(async () => {
@@ -380,7 +409,7 @@ function AiTab({ mode, ai, meal, date, onDone }: { mode: "photo" | "text"; ai: b
               router.push(`/today?d=${date}`);
             })}
           >
-            {pending ? <Loader2 className="size-4 animate-spin" /> : `${t.log.logAll} · ${fmt(total.kcal)} kcal`}
+            {pending ? <Loader2 className="size-5 animate-spin" /> : `${t.log.logAll} · ${fmt(total.kcal)} kcal`}
           </Button>
         </div>
       )}
@@ -444,16 +473,19 @@ function BarcodeTab({ onPick }: { onPick: (f: FoodItem) => void }) {
       {supported !== false ? (
         <div className="relative aspect-[4/3] overflow-hidden rounded-[var(--radius-card)] bg-black">
           <video ref={video} playsInline muted className="size-full object-cover" />
-          <div className="pointer-events-none absolute inset-x-10 top-1/2 h-24 -translate-y-1/2 rounded-2xl border-2 border-white/80" />
+          <div className="pointer-events-none absolute inset-x-10 top-1/2 h-28 -translate-y-1/2 rounded-3xl border-2 border-white/85 shadow-[0_0_0_999px_rgb(0_0_0/0.35)]" />
         </div>
       ) : (
-        <Card className="p-4 text-[13px] text-muted">{t.log.cameraUnsupported}</Card>
+        <Card className="flex items-start gap-3.5 p-5">
+          <IconTile><Barcode className="size-5" /></IconTile>
+          <p className="text-[14px] leading-relaxed text-muted">{t.log.cameraUnsupported}</p>
+        </Card>
       )}
       <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); if (code) lookup(code); }}>
-        <Input inputMode="numeric" placeholder={t.log.barcodeManual} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
+        <Input inputMode="numeric" placeholder={t.log.barcodeManual} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} enterKeyHint="search" />
         <Button type="submit" disabled={busy || code.length < 6}>{busy ? <Loader2 className="size-4 animate-spin" /> : t.log.lookup}</Button>
       </form>
-      {err && <p className="text-center text-sm text-bad">{err}</p>}
+      {err && <p className="text-center text-sm font-semibold text-bad">{err}</p>}
     </div>
   );
 }
@@ -468,9 +500,9 @@ function QuickTab({ meal, date, onDone, onCreated }: { meal: Meal; date: string;
   const n = (v: string) => Number(v) || 0;
 
   return (
-    <div className="space-y-5">
-      <Card className="space-y-3 p-4">
-        <h2 className="font-semibold">{t.log.quickTitle}</h2>
+    <div className="space-y-4">
+      <Card className="space-y-3 p-5">
+        <h2 className="font-display text-[22px] font-semibold">{t.log.quickTitle}</h2>
         <Input placeholder={t.log.foodName} value={q.name} onChange={(e) => setQ({ ...q, name: e.target.value })} />
         <div className="grid grid-cols-4 gap-2">
           {(["kcal", "protein", "carbs", "fat"] as const).map((k) => (
@@ -486,10 +518,10 @@ function QuickTab({ meal, date, onDone, onCreated }: { meal: Meal; date: string;
         })}>{t.log.logIt}</Button>
       </Card>
 
-      <Card className="space-y-3 p-4">
+      <Card className="space-y-3 p-5">
         <div>
-          <h2 className="font-semibold">{t.log.createFood}</h2>
-          <p className="text-[12px] text-muted">{t.log.per100}</p>
+          <h2 className="font-display text-[22px] font-semibold">{t.log.createFood}</h2>
+          <p className="text-[12px] font-semibold text-faint">{t.log.per100}</p>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <Input placeholder={t.log.foodName} value={c.name} onChange={(e) => setC({ ...c, name: e.target.value })} />

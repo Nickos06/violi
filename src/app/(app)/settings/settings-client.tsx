@@ -2,7 +2,7 @@
 
 import { useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, Watch } from "lucide-react";
 import { setManualTargets, updateGoals, updateSettings } from "@/app/actions/profile";
 import { disconnect } from "@/app/actions/integrations";
 import { logout } from "@/app/actions/auth";
@@ -44,7 +44,7 @@ export function SettingsClient({ user, garmin, strava, flash }: { user: U; garmi
       <SectionTitle>{t.settings.integrations}</SectionTitle>
       <Card className="divide-y divide-border">
         <IntegrationRow
-          name="Garmin Connect" logo={<span className="text-xl">⌚</span>} desc={t.settings.garminD} note={t.settings.garminNote}
+          name="Garmin Connect" logo={<Watch className="size-5 text-text" />} desc={t.settings.garminD} note={t.settings.garminNote}
           state={garmin} provider="garmin" onDisconnect={() => save("integ", () => disconnect("garmin"))} pending={pending}
         />
         <IntegrationRow
@@ -60,7 +60,7 @@ export function SettingsClient({ user, garmin, strava, flash }: { user: U; garmi
           <Seg value={user.locale} options={[{ v: "el", l: "Ελληνικά" }, { v: "en", l: "English" }]} onChange={(v) => save("app", () => updateSettings({ locale: v as "el" | "en" }))} />
         </Row>
         <Row label={t.settings.theme}>
-          <Seg value={user.theme} options={[{ v: "dark", l: `🌙 ${t.settings.dark}` }, { v: "light", l: `☀️ ${t.settings.light}` }]} onChange={(v) => save("app", () => updateSettings({ theme: v as "dark" | "light" }))} />
+          <Seg value={user.theme} options={[{ v: "dark", l: t.settings.dark }, { v: "light", l: t.settings.light }]} onChange={(v) => save("app", () => updateSettings({ theme: v as "dark" | "light" }))} />
         </Row>
       </Card>
 

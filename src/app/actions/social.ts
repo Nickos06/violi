@@ -5,11 +5,13 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireUserApi } from "@/lib/auth";
 import { awardCapped, awardXp, unlock, XP } from "@/lib/gamification";
-import { saveImage } from "@/lib/uploads";
 import { trendSeries } from "@/lib/nutrition";
 import { addDays, today } from "@/lib/dates";
 
 const Visibility = z.enum(["public", "friends", "private"]);
+
+/** Only accept images this app stored (see /api/uploads). */
+const ownPhoto = (url?: string | null) => (url && /^\/api\/files\/[a-f0-9]{24}\.(jpg|png|webp|gif)$/.test(url) ? url : null);
 
 async function afterPost(userId: string, postId: string) {
   await awardCapped(userId, "post", postId, XP.post, XP.postDailyCap);
@@ -17,19 +19,17 @@ async function afterPost(userId: string, postId: string) {
   revalidatePath("/social");
 }
 
-export async function createTextPost(form: FormData) {
+export async function createTextPost(input: { text?: string; visibility?: string; photoUrl?: string | null }) {
   const user = await requireUserApi();
-  const text = z.string().trim().max(1000).parse(String(form.get("text") ?? ""));
-  const visibility = Visibility.parse(form.get("visibility") ?? user.defaultVisibility);
-  const file = form.get("photo");
-  let photoUrl: string | null = null;
-  if (file instanceof File && file.size > 0) photoUrl = await saveImage(Buffer.from(await file.arrayBuffer()), file.type);
+  const text = z.string().trim().max(1000).parse(input.text ?? "");
+  const visibility = Visibility.parse(input.visibility ?? user.defaultVisibility);
+  const photoUrl = ownPhoto(input.photoUrl);
   if (!text && !photoUrl) return;
   const post = await db.post.create({ data: { userId: user.id, type: "text", text: text || null, photoUrl, visibility, payload: {} } });
   await afterPost(user.id, post.id);
 }
 
-export async function shareMeal(input: { date: string; meal: string; text?: string; visibility?: string }) {
+export async function shareMeal(input: { date: string; meal: string; text?: string; visibility?: string; photoUrl?: string | null }) {
   const user = await requireUserApi();
   if (!user.shareMeals) throw new Error("SHARING_DISABLED");
   const logs = await db.foodLog.findMany({ where: { userId: user.id, date: input.date, meal: input.meal }, orderBy: { createdAt: "asc" } });
@@ -38,7 +38,7 @@ export async function shareMeal(input: { date: string; meal: string; text?: stri
   const post = await db.post.create({
     data: {
       userId: user.id, type: "meal", text: input.text?.trim().slice(0, 1000) || null,
-      photoUrl: logs.find((l) => l.photoUrl)?.photoUrl ?? null,
+      photoUrl: ownPhoto(input.photoUrl) ?? logs.find((l) => l.photoUrl)?.photoUrl ?? null,
       visibility: Visibility.parse(input.visibility ?? user.defaultVisibility), refId: `${input.date}:${input.meal}`,
       payload: { meal: input.meal, items: logs.map((l) => ({ name: l.name, grams: l.grams, kcal: Math.round(l.kcal) })), kcal: sum("kcal"), protein: sum("protein"), carbs: sum("carbs"), fat: sum("fat") },
     },
@@ -47,14 +47,14 @@ export async function shareMeal(input: { date: string; meal: string; text?: stri
   return post.id;
 }
 
-export async function shareWorkout(input: { activityId: string; text?: string; visibility?: string }) {
+export async function shareWorkout(input: { activityId: string; text?: string; visibility?: string; photoUrl?: string | null }) {
   const user = await requireUserApi();
   const a = await db.activity.findFirst({ where: { id: input.activityId, userId: user.id } });
   // Strava data may only be displayed to the athlete who owns it (Strava API Agreement).
   if (!a || a.source === "strava") throw new Error("NOT_SHAREABLE");
   const post = await db.post.create({
     data: {
-      userId: user.id, type: "workout", text: input.text?.trim().slice(0, 1000) || null,
+      userId: user.id, type: "workout", text: input.text?.trim().slice(0, 1000) || null, photoUrl: ownPhoto(input.photoUrl),
       visibility: Visibility.parse(input.visibility ?? user.defaultVisibility), refId: a.id,
       payload: { type: a.type, name: a.name, durationSec: a.durationSec, distanceM: a.distanceM, kcal: a.kcal, avgHr: a.avgHr, source: a.source },
     },
@@ -63,7 +63,7 @@ export async function shareWorkout(input: { activityId: string; text?: string; v
   return post.id;
 }
 
-export async function shareProgress(input: { text?: string; visibility?: string }) {
+export async function shareProgress(input: { text?: string; visibility?: string; photoUrl?: string | null }) {
   const user = await requireUserApi();
   if (!user.shareWeight) throw new Error("SHARING_DISABLED");
   const weights = await db.weightEntry.findMany({ where: { userId: user.id, date: { gte: addDays(today(), -60) } }, orderBy: { date: "asc" } });
@@ -72,7 +72,7 @@ export async function shareProgress(input: { text?: string; visibility?: string 
   const monthAgo = s.find((x) => x.date >= addDays(today(), -30)) ?? s[0];
   const post = await db.post.create({
     data: {
-      userId: user.id, type: "progress", text: input.text?.trim().slice(0, 1000) || null,
+      userId: user.id, type: "progress", text: input.text?.trim().slice(0, 1000) || null, photoUrl: ownPhoto(input.photoUrl),
       visibility: Visibility.parse(input.visibility ?? user.defaultVisibility),
       payload: { change30: Math.round((s.at(-1)!.trend - monthAgo.trend) * 10) / 10, goal: user.goalType, streak: user.streak },
     },

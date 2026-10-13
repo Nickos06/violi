@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Manrope } from "next/font/google";
 import { cookies } from "next/headers";
 import { getUser } from "@/lib/auth";
 import { I18nProvider } from "@/components/i18n-provider";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin", "greek"], variable: "--font-inter", display: "swap" });
+const manrope = Manrope({ subsets: ["latin", "greek"], variable: "--font-manrope", display: "swap" });
 
 export const metadata: Metadata = {
   title: { default: "Violi", template: "%s · Violi" },
@@ -17,10 +17,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#08080a" },
-    { media: "(prefers-color-scheme: light)", color: "#f6f6f8" },
-  ],
+  interactiveWidget: "resizes-content",
+  // theme-color is set in <head> from the user's chosen theme (the app themes by setting, not by OS).
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -29,7 +27,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const locale = (user?.locale ?? jar.get("violi_locale")?.value) === "en" ? "en" : "el";
   const theme = user?.theme ?? jar.get("violi_theme")?.value ?? "dark";
   return (
-    <html lang={locale} data-theme={theme === "light" ? "light" : "dark"} className={inter.variable}>
+    <html lang={locale} data-theme={theme === "light" ? "light" : "dark"} className={manrope.variable}>
+      <head>
+        <meta name="theme-color" content={theme === "light" ? "#ffffff" : "#000000"} />
+      </head>
       <body className="min-h-dvh font-sans">
         <I18nProvider locale={locale}>{children}</I18nProvider>
       </body>

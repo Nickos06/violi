@@ -70,6 +70,7 @@ model User {
   actedNotifs   Notification[]  @relation("actor")
   customFoods   Food[]
   favorites     FavoriteFood[]
+  savedMeals    SavedMeal[]
 }
 
 model Session {
@@ -89,7 +90,7 @@ model Food {
   nameEl       String?
   brand        String?
   barcode      String?  @unique
-  source       String   @default("seed") // seed | off | usda | custom | ai
+  source       String   @default("seed") // seed | off | usda | custom | ai | meal
   externalId   String?
   servingG     Float    @default(100)
   servingLabel String?
@@ -106,6 +107,7 @@ model Food {
 
   logs      FoodLog[]
   favorites FavoriteFood[]
+  savedMeal SavedMeal?
 
   @@unique([source, externalId])
   @@index([name])
@@ -325,4 +327,41 @@ model Notification {
   actor     User     @relation("actor", fields: [actorId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+}
+
+/// A recipe / meal the user eats often. Its nutrition is stored as a composite Food (per 100 g of the
+/// finished dish), so logging it is just "how many grams did you eat".
+model SavedMeal {
+  id         String   @id @default(cuid())
+  userId     String
+  name       String
+  icon       String   @default("utensils")
+  foodId     String   @unique
+  totalGrams Float // weight of the finished dish (may differ from the sum of raw ingredients)
+  portionG   Float // default portion when logging
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  food       Food     @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  items      SavedMealItem[]
+
+  @@index([userId])
+}
+
+/// Ingredient snapshot. Nutrition values are absolute for `grams`.
+model SavedMealItem {
+  id       String  @id @default(cuid())
+  mealId   String
+  foodId   String?
+  name     String
+  grams    Float
+  kcal     Float
+  protein  Float
+  carbs    Float
+  fat      Float
+  fiber    Float   @default(0)
+  sugar    Float   @default(0)
+  micros   Json
+  position Int     @default(0)
+  meal     SavedMeal @relation(fields: [mealId], references: [id], onDelete: Cascade)
 }

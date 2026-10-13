@@ -25,7 +25,7 @@ export function WeighInButton({ className, children, last }: { className?: strin
           }}
         >
           <div className="flex items-center gap-3">
-            <Input autoFocus type="number" inputMode="decimal" step="0.1" min={30} max={300} required value={value} onChange={(e) => setValue(e.target.value)} className="h-16 text-center text-3xl font-bold" />
+            <Input data-autofocus="" type="number" inputMode="decimal" step="0.1" min={30} max={300} required value={value} onChange={(e) => setValue(e.target.value)} className="h-16 text-center text-3xl font-bold" />
             <span className="text-lg text-muted">kg</span>
           </div>
           <Button type="submit" size="lg" className="w-full" disabled={pending || !value}>{t.common.save}</Button>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Scale, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, Flame, Scale, Sparkles, ArrowUpRight } from "lucide-react";
 import { requireUser, getT } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { addDays, isValidDay, today } from "@/lib/dates";
@@ -7,7 +7,7 @@ import { budgetForDay, checkInStatus, daySummary } from "@/lib/plan";
 import { liveStreak, settleDays } from "@/lib/gamification";
 import { levelFromXp, rankForLevel } from "@/lib/levels";
 import { NUTRIENTS } from "@/lib/nutrients";
-import { Bar, Card, Ring, SectionTitle, fmt } from "@/components/ui";
+import { Bar, Card, IconTile, Ring, SectionTitle, fmt, cn } from "@/components/ui";
 import { MealSection } from "@/components/meal-section";
 import { ExerciseCard } from "@/components/exercise-card";
 import { WeighInButton } from "@/components/weigh-in";
@@ -23,10 +23,11 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
 
   await settleDays(user.id, (day) => budgetForDay(user, day));
   const fresh = await db.user.findUniqueOrThrow({ where: { id: user.id } });
-  const [{ logs, activities, daily, budget, totals, microTargets }, checkIn, weighedToday] = await Promise.all([
+  const [{ logs, activities, daily, budget, totals, microTargets }, checkIn, weighedToday, savedMeals] = await Promise.all([
     daySummary(fresh, date),
     checkInStatus(fresh),
     db.weightEntry.findUnique({ where: { userId_date: { userId: user.id, date: today() } } }),
+    db.savedMeal.count({ where: { userId: user.id } }),
   ]);
 
   const remaining = Math.round(budget.kcal - totals.kcal);
@@ -34,8 +35,9 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   const lv = levelFromXp(fresh.xp);
   const rank = rankForLevel(lv.level);
   const streak = liveStreak(fresh);
-  const label = isToday ? t.common.today : date === addDays(today(), -1) ? t.common.yesterday
-    : new Date(`${date}T12:00:00`).toLocaleDateString(locale === "el" ? "el-GR" : "en-GB", { weekday: "long", day: "numeric", month: "short" });
+  const dateLabel = isToday ? t.common.today : date === addDays(today(), -1) ? t.common.yesterday
+    : new Date(`${date}T12:00:00`).toLocaleDateString(locale === "el" ? "el-GR" : "en-GB", { weekday: "short", day: "numeric", month: "short" });
+  const longDate = new Date(`${date}T12:00:00`).toLocaleDateString(locale === "el" ? "el-GR" : "en-GB", { weekday: "long", day: "numeric", month: "long" });
 
   const macros = [
     { key: "protein", label: t.macros.protein, v: totals.protein, max: budget.protein, color: "var(--protein)" },
@@ -45,53 +47,67 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   const highlight = NUTRIENTS.filter((n) => ["vitC", "vitD", "calcium", "iron", "magnesium", "potassium"].includes(n.key));
 
   return (
-    <div className="animate-rise">
-      {/* Date + status row */}
-      <div className="mt-3 flex items-center justify-between">
-        <div className="flex items-center gap-1">
-          <Link href={`/today?d=${addDays(date, -1)}`} className="grid size-9 place-items-center rounded-full text-muted hover:bg-surface-2" aria-label="Previous day">
-            <ChevronLeft className="size-5" />
+    <div className="stagger">
+      {/* Date + status */}
+      <div className="mt-4 flex items-center justify-between gap-2">
+        <div className="flex items-center rounded-full border border-border bg-surface/70 p-1 backdrop-blur">
+          <Link href={`/today?d=${addDays(date, -1)}`} className="press grid size-8 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-text" aria-label="Previous day">
+            <ChevronLeft className="size-[18px]" strokeWidth={2.4} />
           </Link>
-          <h1 className="min-w-24 text-center text-[17px] font-semibold capitalize">{label}</h1>
-          {isToday ? <span className="size-9" /> : (
-            <Link href={`/today?d=${addDays(date, 1)}`} className="grid size-9 place-items-center rounded-full text-muted hover:bg-surface-2" aria-label="Next day">
-              <ChevronRight className="size-5" />
-            </Link>
-          )}
+          <span className="min-w-[84px] px-1 text-center text-[14px] font-bold capitalize">{dateLabel}</span>
+          <Link
+            href={`/today?d=${addDays(date, 1)}`}
+            aria-disabled={isToday}
+            className={cn("press grid size-8 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-text", isToday && "pointer-events-none opacity-25")}
+            aria-label="Next day"
+          >
+            <ChevronRight className="size-[18px]" strokeWidth={2.4} />
+          </Link>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="flex h-8 items-center gap-1 rounded-full bg-surface-2 px-3 text-[13px] font-semibold">
-            🔥 <span className="tabular">{streak}</span>
+        <div className="flex items-center gap-1.5">
+          <span className={cn("flex h-9 items-center gap-1 rounded-full px-3 text-[13px] font-bold", streak > 0 ? "bg-text text-bg" : "bg-surface-2 text-faint")}>
+            <Flame className="size-4" strokeWidth={2.4} fill={streak > 0 ? "currentColor" : "none"} />
+            <span className="tabular">{streak}</span>
           </span>
-          <Link href={`/u/${fresh.username}`} className="flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] font-bold" style={{ color: rank.color, background: `${rank.color}1f` }}>
+          <Link href={`/u/${fresh.username}`} className="press flex h-9 items-center rounded-full px-3 text-[13px] font-extrabold" style={{ color: rank.color, background: `color-mix(in oklab, ${rank.color} 14%, transparent)` }}>
             Lv {lv.level}
           </Link>
         </div>
       </div>
 
-      {/* Calorie ring */}
-      <Card className="mt-4 p-5">
-        <div className="flex items-center gap-5">
-          <Ring value={totals.kcal} max={budget.kcal} size={164} stroke={14} color={over ? "var(--bad)" : "var(--accent)"}>
+      {/* Energy hero */}
+      <Card className="relative mt-4 overflow-hidden p-5 sm:p-6">
+        <p className="text-[12px] font-bold capitalize text-muted">{longDate}</p>
+        <div className="mt-3 flex items-center gap-5">
+          <Ring value={totals.kcal} max={budget.kcal} size={156} stroke={13} color={over ? "var(--bad)" : undefined}>
             <div>
-              <div className="tabular text-[34px] font-bold leading-none">{fmt(Math.abs(remaining))}</div>
-              <div className="mt-1 text-[12px] text-muted">{over ? t.today.over : t.today.remaining}</div>
+              <div className={cn("font-display tabular text-[40px] font-semibold leading-none", over && "text-bad")}>{fmt(Math.abs(remaining))}</div>
+              <div className="mt-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-muted">{over ? t.today.over : t.today.remaining}</div>
             </div>
           </Ring>
-          <div className="flex-1 space-y-3">
+          <dl className="flex-1 space-y-3.5">
             <Stat label={t.today.budget} value={budget.baseKcal} />
             <Stat label={t.today.eaten} value={totals.kcal} />
-            <Stat label={t.today.burned} value={budget.exerciseBonus} prefix="+" color="var(--good)" hint={budget.exerciseKcal > 0 ? `${fresh.exerciseCreditPct}% ${t.common.of} ${fmt(budget.exerciseKcal)}` : undefined} />
-          </div>
+            <Stat
+              label={t.today.burned}
+              value={budget.exerciseBonus}
+              prefix="+"
+              color="var(--good)"
+              hint={budget.exerciseKcal > 0 ? `${fresh.exerciseCreditPct}% · ${fmt(budget.exerciseKcal)}` : undefined}
+            />
+          </dl>
         </div>
-        <div className="mt-5 grid grid-cols-3 gap-4">
+        <div className="mt-6 grid grid-cols-3 gap-2.5">
           {macros.map((m) => (
-            <div key={m.key}>
-              <Bar value={m.v} max={m.max} color={m.color} over={m.v > m.max * 1.1} />
-              <div className="mt-2 text-[12px] text-muted">{m.label}</div>
-              <div className="tabular text-[14px] font-semibold">
-                {fmt(m.v)}<span className="font-normal text-muted"> / {fmt(m.max)}g</span>
+            <div key={m.key} className="rounded-2xl bg-surface-2/70 px-3 py-2.5">
+              <div className="flex min-w-0 items-center gap-1.5 text-[11px] font-bold text-muted">
+                <span className="size-1.5 shrink-0 rounded-full" style={{ background: m.color }} />
+                <span className="truncate">{m.label}</span>
               </div>
+              <div className="tabular mt-1 text-[15px] font-extrabold">
+                {fmt(m.v)}<span className="text-[12px] font-semibold text-faint">/{fmt(m.max)}g</span>
+              </div>
+              <Bar value={m.v} max={m.max} color={m.color} over={m.v > m.max * 1.15} className="mt-2 h-[5px]" />
             </div>
           ))}
         </div>
@@ -101,20 +117,20 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
       {isToday && (checkIn.due || !weighedToday) && (
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           {checkIn.due && (
-            <Link href="/progress#checkin" className="card flex items-center gap-3 p-4 transition hover:bg-surface-2">
-              <div className="grid size-10 place-items-center rounded-xl bg-accent-soft text-accent"><Sparkles className="size-5" /></div>
+            <Link href="/progress#checkin" className="card press flex items-center gap-3.5 p-4">
+              <IconTile><Sparkles className="size-5" /></IconTile>
               <div className="min-w-0">
-                <div className="text-[14px] font-semibold">{t.today.checkInDue}</div>
-                <div className="text-[12px] text-muted">{t.today.checkInDueD}</div>
+                <div className="text-[14px] font-bold">{t.today.checkInDue}</div>
+                <div className="text-[12.5px] leading-snug text-muted">{t.today.checkInDueD}</div>
               </div>
             </Link>
           )}
           {!weighedToday && (
-            <WeighInButton className="card flex items-center gap-3 p-4 text-left transition hover:bg-surface-2">
-              <div className="grid size-10 place-items-center rounded-xl bg-surface-2"><Scale className="size-5" /></div>
+            <WeighInButton className="card press flex items-center gap-3.5 p-4 text-left">
+              <IconTile tone="var(--protein)"><Scale className="size-5" /></IconTile>
               <div className="min-w-0">
-                <div className="text-[14px] font-semibold">{t.today.weighIn}</div>
-                <div className="text-[12px] text-muted">{t.today.weighInD}</div>
+                <div className="text-[14px] font-bold">{t.today.weighIn}</div>
+                <div className="text-[12.5px] leading-snug text-muted">{t.today.weighInD}</div>
               </div>
             </WeighInButton>
           )}
@@ -122,55 +138,74 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
       )}
 
       {/* Meals */}
-      {(["breakfast", "lunch", "dinner", "snack"] as const).map((meal) => (
-        <MealSection
-          key={meal}
-          meal={meal}
-          date={date}
-          canShare={fresh.shareMeals}
-          defaultVisibility={fresh.defaultVisibility}
-          logs={logs.filter((l) => l.meal === meal).map((l) => ({
-            id: l.id, name: l.name, grams: l.grams, kcal: l.kcal, protein: l.protein, carbs: l.carbs, fat: l.fat, source: l.source, photoUrl: l.photoUrl,
-          }))}
-        />
-      ))}
+      <div>
+        {(["breakfast", "lunch", "dinner", "snack"] as const).map((meal) => (
+          <MealSection
+            key={meal}
+            meal={meal}
+            date={date}
+            canShare={fresh.shareMeals}
+            hasSavedMeals={savedMeals > 0}
+            defaultVisibility={fresh.defaultVisibility}
+            logs={logs.filter((l) => l.meal === meal).map((l) => ({
+              id: l.id, name: l.name, grams: l.grams, kcal: l.kcal, protein: l.protein, carbs: l.carbs, fat: l.fat, source: l.source, photoUrl: l.photoUrl,
+            }))}
+          />
+        ))}
+      </div>
 
       {/* Exercise */}
-      <SectionTitle action={<Link href="/workouts" className="text-[13px] font-semibold text-accent">{t.common.seeAll}</Link>}>{t.today.exercise}</SectionTitle>
-      <ExerciseCard
-        date={date}
-        steps={daily?.steps ?? null}
-        activities={activities.map((a) => ({ id: a.id, type: a.type, name: a.name, source: a.source, durationSec: a.durationSec, distanceM: a.distanceM, kcal: a.kcal }))}
-      />
+      <div>
+        <SectionTitle action={<Link href="/workouts" className="text-[13px] font-bold text-accent">{t.common.seeAll}</Link>}>{t.today.exercise}</SectionTitle>
+        <ExerciseCard
+          date={date}
+          steps={daily?.steps ?? null}
+          activities={activities.map((a) => ({ id: a.id, type: a.type, name: a.name, source: a.source, durationSec: a.durationSec, distanceM: a.distanceM, kcal: a.kcal }))}
+        />
+      </div>
 
       {/* Micronutrients */}
-      <SectionTitle action={<Link href={`/nutrients?d=${date}`} className="text-[13px] font-semibold text-accent">{t.today.viewAll}</Link>}>{t.today.micros}</SectionTitle>
-      <Card className="grid grid-cols-2 gap-x-6 gap-y-4 p-5 sm:grid-cols-3">
-        {highlight.map((n) => {
-          const v = totals.micros[n.key] ?? 0;
-          const target = microTargets[n.key];
-          return (
-            <div key={n.key}>
-              <div className="flex items-baseline justify-between text-[12px]">
-                <span className="truncate text-muted">{locale === "el" ? n.el : n.en}</span>
-                <span className="tabular font-semibold">{Math.round((v / target) * 100)}%</span>
+      <div>
+        <SectionTitle action={<Link href={`/nutrients?d=${date}`} className="text-[13px] font-bold text-accent">{t.today.viewAll}</Link>}>{t.today.micros}</SectionTitle>
+        <Card className="grid grid-cols-2 gap-x-6 gap-y-4 p-5 sm:grid-cols-3">
+          {highlight.map((n) => {
+            const v = totals.micros[n.key] ?? 0;
+            const target = microTargets[n.key];
+            const pct = Math.round((v / target) * 100);
+            return (
+              <div key={n.key}>
+                <div className="flex items-baseline justify-between gap-2 text-[12px]">
+                  <span className="truncate font-semibold text-muted">{locale === "el" ? n.el : n.en}</span>
+                  <span className={cn("tabular font-extrabold", pct >= 100 && "text-good")}>{pct}%</span>
+                </div>
+                <Bar value={v} max={target} color="var(--fiber)" className="mt-1.5 h-[5px]" />
               </div>
-              <Bar value={v} max={target} color="var(--fiber)" className="mt-1.5" />
+            );
+          })}
+          <div>
+            <div className="flex items-baseline justify-between gap-2 text-[12px]">
+              <span className="font-semibold text-muted">{t.macros.fiber}</span>
+              <span className="tabular font-extrabold">{fmt(totals.fiber)}/{budget.fiber}g</span>
             </div>
-          );
-        })}
-        <div>
-          <div className="flex items-baseline justify-between text-[12px]">
-            <span className="text-muted">{t.macros.fiber}</span>
-            <span className="tabular font-semibold">{fmt(totals.fiber)}/{budget.fiber}g</span>
+            <Bar value={totals.fiber} max={budget.fiber} color="var(--fiber)" className="mt-1.5 h-[5px]" />
           </div>
-          <Bar value={totals.fiber} max={budget.fiber} color="var(--fiber)" className="mt-1.5" />
-        </div>
-      </Card>
+        </Card>
+      </div>
 
-      <p className="mt-6 text-center text-[12px] text-faint">
-        Lv {lv.level} · {t.ranks[rank.key]} · {fmt(lv.current)}/{fmt(lv.needed)} XP
-      </p>
+      {/* Level */}
+      <Link href={`/u/${fresh.username}`} className="card press mt-8 flex items-center gap-4 p-4">
+        <div className="grid size-12 shrink-0 place-items-center rounded-2xl text-[15px] font-black" style={{ color: rank.color, background: `color-mix(in oklab, ${rank.color} 15%, transparent)` }}>
+          {lv.level}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-[14px] font-bold">{t.ranks[rank.key]} · {t.profile.level} {lv.level}</span>
+            <span className="tabular text-[12px] font-semibold text-muted">{fmt(lv.current)}/{fmt(lv.needed)} XP</span>
+          </div>
+          <Bar value={lv.current} max={lv.needed} color={rank.color} className="mt-2" />
+        </div>
+        <ArrowUpRight className="size-4 text-faint" />
+      </Link>
     </div>
   );
 }
@@ -178,11 +213,11 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
 function Stat({ label, value, prefix = "", color, hint }: { label: string; value: number; prefix?: string; color?: string; hint?: string }) {
   return (
     <div>
-      <div className="text-[12px] text-muted">{label}</div>
-      <div className="tabular text-[17px] font-semibold" style={color ? { color } : undefined}>
-        {prefix}{fmt(value)} <span className="text-[12px] font-normal text-muted">kcal</span>
-      </div>
-      {hint && <div className="text-[11px] text-faint">{hint}</div>}
+      <dt className="text-[11px] font-bold uppercase tracking-[0.08em] text-faint">{label}</dt>
+      <dd className="tabular text-[19px] font-extrabold leading-tight" style={color ? { color } : undefined}>
+        {prefix}{fmt(value)} <span className="text-[12px] font-semibold text-faint">kcal</span>
+        {hint && <span className="block text-[11px] font-semibold text-faint">{hint}</span>}
+      </dd>
     </div>
   );
 }

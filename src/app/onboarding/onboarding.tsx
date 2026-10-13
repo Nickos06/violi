@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Beef, Check, Flame, Leaf, Salad, Scale, Dumbbell, Droplet, type LucideIcon } from "lucide-react";
 import { completeOnboarding } from "@/app/actions/profile";
 import { useT } from "@/components/i18n-provider";
-import { Button, cn, Field, Input, Ring } from "@/components/ui";
-import { Logo } from "@/components/nav";
+import { Button, cn, Field, IconTile, Input, Ring } from "@/components/ui";
+import { ViolinMark } from "@/components/logo";
 import { computeTargets, initialExpenditure, type ActivityLevel, type DietType, type GoalType } from "@/lib/nutrition";
 
 const ACTIVITY: ActivityLevel[] = ["sedentary", "light", "moderate", "active", "very_active"];
@@ -46,18 +46,18 @@ export function Onboarding({ name }: { name: string }) {
       }),
     );
 
-  const Option = ({ active, onClick, title, desc, icon }: { active: boolean; onClick: () => void; title: string; desc?: string; icon?: string }) => (
+  const Option = ({ active, onClick, title, desc, icon: Icon, tone }: { active: boolean; onClick: () => void; title: string; desc?: string; icon?: LucideIcon; tone?: string }) => (
     <button
       type="button"
       onClick={onClick}
-      className={cn("flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition", active ? "border-accent bg-accent-soft" : "border-border bg-surface hover:bg-surface-2")}
+      className={cn("press flex w-full items-center gap-4 rounded-[20px] border p-4 text-left transition-colors", active ? "border-accent/60 bg-accent-soft" : "border-border bg-surface hover:bg-surface-2")}
     >
-      {icon && <span className="text-2xl">{icon}</span>}
+      {Icon && <IconTile tone={tone} size={44}><Icon className="size-5" strokeWidth={2.2} /></IconTile>}
       <span className="min-w-0 flex-1">
         <span className="block font-semibold">{title}</span>
         {desc && <span className="mt-0.5 block text-[13px] text-muted">{desc}</span>}
       </span>
-      <span className={cn("grid size-6 place-items-center rounded-full border", active ? "border-accent bg-accent text-white" : "border-border")}>
+      <span className={cn("grid size-6 shrink-0 place-items-center rounded-full border transition-colors", active ? "varnish border-transparent" : "border-border-strong")}>
         {active && <Check className="size-3.5" strokeWidth={3} />}
       </span>
     </button>
@@ -71,11 +71,11 @@ export function Onboarding({ name }: { name: string }) {
             <ArrowLeft className="size-5" />
           </button>
         ) : (
-          <Logo />
+          <ViolinMark size={34} />
         )}
         <div className="flex flex-1 gap-1.5">
           {steps.map((_, i) => (
-            <div key={i} className={cn("h-1 flex-1 rounded-full transition", i <= step ? "bg-accent" : "bg-surface-3")} />
+            <div key={i} className={cn("h-1.5 flex-1 rounded-full transition-colors duration-300", i <= step ? "bg-accent" : "bg-surface-3")} />
           ))}
         </div>
       </div>
@@ -83,19 +83,19 @@ export function Onboarding({ name }: { name: string }) {
       <div key={current} className="animate-rise mt-10 flex-1">
         {current === "goal" && (
           <>
-            <p className="text-muted">👋 {name}</p>
-            <h1 className="mt-1 text-[28px] font-bold leading-tight tracking-tight">{o.goal}</h1>
+            <p className="text-[15px] font-semibold text-muted">{name},</p>
+            <h1 className="font-display mt-1 text-[34px] font-semibold leading-tight">{o.goal}</h1>
             <div className="mt-6 space-y-3">
-              <Option icon="🔥" active={s.goalType === "lose"} onClick={() => { set("goalType", "lose"); set("goalRatePct", 0.5); }} title={o.lose} desc={o.loseD} />
-              <Option icon="⚖️" active={s.goalType === "maintain"} onClick={() => set("goalType", "maintain")} title={o.maintain} desc={o.maintainD} />
-              <Option icon="💪" active={s.goalType === "gain"} onClick={() => { set("goalType", "gain"); set("goalRatePct", 0.25); }} title={o.gain} desc={o.gainD} />
+              <Option icon={Flame} tone="var(--accent)" active={s.goalType === "lose"} onClick={() => { set("goalType", "lose"); set("goalRatePct", 0.5); }} title={o.lose} desc={o.loseD} />
+              <Option icon={Scale} tone="var(--protein)" active={s.goalType === "maintain"} onClick={() => set("goalType", "maintain")} title={o.maintain} desc={o.maintainD} />
+              <Option icon={Dumbbell} tone="var(--fat)" active={s.goalType === "gain"} onClick={() => { set("goalType", "gain"); set("goalRatePct", 0.25); }} title={o.gain} desc={o.gainD} />
             </div>
           </>
         )}
 
         {current === "about" && (
           <>
-            <h1 className="text-[28px] font-bold tracking-tight">{o.about}</h1>
+            <h1 className="font-display text-[34px] font-semibold leading-tight">{o.about}</h1>
             <div className="mt-6 space-y-4">
               <div className="grid grid-cols-2 gap-2 rounded-2xl bg-surface-2 p-1">
                 {(["male", "female"] as const).map((x) => (
@@ -120,7 +120,7 @@ export function Onboarding({ name }: { name: string }) {
 
         {current === "activity" && (
           <>
-            <h1 className="text-[28px] font-bold leading-tight tracking-tight">{o.activity}</h1>
+            <h1 className="font-display text-[34px] font-semibold leading-tight">{o.activity}</h1>
             <p className="mt-2 text-[14px] text-muted">{o.activityHint}</p>
             <div className="mt-6 space-y-2.5">
               {ACTIVITY.map((a) => (
@@ -132,7 +132,7 @@ export function Onboarding({ name }: { name: string }) {
 
         {current === "rate" && s.goalType !== "maintain" && (
           <>
-            <h1 className="text-[28px] font-bold tracking-tight">{o.rate}</h1>
+            <h1 className="font-display text-[34px] font-semibold leading-tight">{o.rate}</h1>
             <div className="mt-6 space-y-2.5">
               {RATES[s.goalType].map((r) => {
                 const kg = ((r / 100) * (Number(s.weightKg) || 75)).toFixed(2);
@@ -152,10 +152,10 @@ export function Onboarding({ name }: { name: string }) {
 
         {current === "diet" && (
           <>
-            <h1 className="text-[28px] font-bold leading-tight tracking-tight">{o.diet}</h1>
+            <h1 className="font-display text-[34px] font-semibold leading-tight">{o.diet}</h1>
             <div className="mt-6 space-y-2.5">
               {DIETS.map((d) => (
-                <Option key={d} active={s.dietType === d} onClick={() => set("dietType", d)} title={o[d]} icon={{ balanced: "🥗", high_protein: "🥩", low_carb: "🥑", keto: "🧈", plant: "🌱" }[d]} />
+                <Option key={d} active={s.dietType === d} onClick={() => set("dietType", d)} title={o[d]} icon={({ balanced: Salad, high_protein: Beef, low_carb: Leaf, keto: Droplet, plant: Leaf } as Record<string, LucideIcon>)[d]} tone={({ balanced: "var(--fiber)", high_protein: "var(--protein)", low_carb: "var(--carbs)", keto: "var(--fat)", plant: "var(--good)" } as Record<string, string>)[d]} />
               ))}
             </div>
           </>
@@ -163,12 +163,12 @@ export function Onboarding({ name }: { name: string }) {
 
         {current === "plan" && (
           <>
-            <h1 className="text-[28px] font-bold tracking-tight">{o.planTitle}</h1>
+            <h1 className="font-display text-[34px] font-semibold leading-tight">{o.planTitle}</h1>
             <p className="mt-2 text-muted">{o.planSub}</p>
             <div className="card mt-6 grid place-items-center p-6">
               <Ring value={plan.kcal} max={plan.kcal} size={190} stroke={14}>
                 <div>
-                  <div className="tabular text-4xl font-bold">{plan.kcal.toLocaleString()}</div>
+                  <div className="font-display tabular text-[46px] font-semibold leading-none">{plan.kcal.toLocaleString()}</div>
                   <div className="text-[13px] text-muted">kcal · {o.dailyTarget.toLowerCase()}</div>
                 </div>
               </Ring>

@@ -2,51 +2,62 @@
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
+/*
+ * Violi design tokens — monochrome.
+ * Pure black & white with a neutral grey ramp. Colour is reserved for one job only: errors / going
+ * over a limit (--bad). Macros are told apart by tone (ink → mid-grey → light grey), not hue.
+ */
 :root {
-  --bg: #f6f6f8;
+  --bg: #ffffff;
   --surface: #ffffff;
-  --surface-2: #f0f0f3;
-  --surface-3: #e6e6ea;
-  --border: #e4e4e8;
-  --text: #0b0b0e;
-  --muted: #6b6b76;
-  --faint: #a3a3ad;
-  --accent: #6d5bf5;
-  --accent-soft: #6d5bf51a;
+  --surface-2: #f4f4f4;
+  --surface-3: #e9e9e9;
+  --border: #ececec;
+  --border-strong: #d6d6d6;
+  --text: #0a0a0a;
+  --muted: #6b6b6b;
+  --faint: #a3a3a3;
+  --accent: #0a0a0a;
+  --accent-2: #0a0a0a;
+  --accent-soft: rgb(10 10 10 / 0.06);
   --accent-fg: #ffffff;
-  --protein: #3b8cf0;
-  --carbs: #e8a317;
-  --fat: #f0614f;
-  --fiber: #22a55a;
-  --good: #16a34a;
+  --protein: #0a0a0a;
+  --carbs: #6f6f6f;
+  --fat: #b0b0b0;
+  --fiber: #0a0a0a;
+  --good: #0a0a0a;
   --bad: #e5484d;
-  --warn: #d97706;
-  --ring-track: #ebebef;
-  --shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.04);
+  --warn: #6b6b6b;
+  --ring-track: #efefef;
+  --card-shadow: 0 0 0 transparent;
+  --card-highlight: 0 0 0 transparent;
   color-scheme: light;
 }
 
 [data-theme="dark"] {
-  --bg: #08080a;
-  --surface: #111114;
-  --surface-2: #18181c;
-  --surface-3: #222228;
-  --border: #232329;
-  --text: #f4f4f6;
-  --muted: #8d8d98;
-  --faint: #55555f;
-  --accent: #8b7cff;
-  --accent-soft: #8b7cff1f;
-  --accent-fg: #ffffff;
-  --protein: #5aa9ff;
-  --carbs: #ffc24b;
-  --fat: #ff7a6b;
-  --fiber: #4ade80;
-  --good: #34d399;
-  --bad: #f87171;
-  --warn: #fbbf24;
-  --ring-track: #1d1d22;
-  --shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset;
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --surface-2: #141414;
+  --surface-3: #202020;
+  --border: #1c1c1c;
+  --border-strong: #2e2e2e;
+  --text: #fafafa;
+  --muted: #8f8f8f;
+  --faint: #555555;
+  --accent: #fafafa;
+  --accent-2: #fafafa;
+  --accent-soft: rgb(250 250 250 / 0.08);
+  --accent-fg: #000000;
+  --protein: #fafafa;
+  --carbs: #a0a0a0;
+  --fat: #5c5c5c;
+  --fiber: #fafafa;
+  --good: #fafafa;
+  --bad: #ff5f5f;
+  --warn: #8f8f8f;
+  --ring-track: #1a1a1a;
+  --card-shadow: 0 0 0 transparent;
+  --card-highlight: 0 0 0 transparent;
   color-scheme: dark;
 }
 
@@ -56,10 +67,12 @@
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-text: var(--text);
   --color-muted: var(--muted);
   --color-faint: var(--faint);
   --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
   --color-accent-soft: var(--accent-soft);
   --color-accent-fg: var(--accent-fg);
   --color-protein: var(--protein);
@@ -69,31 +82,95 @@
   --color-good: var(--good);
   --color-bad: var(--bad);
   --color-warn: var(--warn);
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --radius-card: 1.25rem;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-html,
+/* ---------- Platform baseline (feel native on phones) ---------- */
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
+  background: var(--bg);
+}
+
 body {
   background: var(--bg);
   color: var(--text);
+  font-feature-settings: "ss01", "cv05";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-body {
-  font-feature-settings: "cv11", "ss01", "tnum";
-  -webkit-font-smoothing: antialiased;
-  -webkit-tap-highlight-color: transparent;
+button,
+a,
+[role="button"],
+label,
+summary {
+  touch-action: manipulation;
 }
+
+button,
+[role="button"],
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Inputs are never smaller than 16px — below that iOS zooms the page on focus. */
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent) 35%, transparent);
+}
+
+/* ---------- Primitives ---------- */
 
 .tabular {
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.04em;
 }
 
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
-  box-shadow: var(--shadow);
+  box-shadow: var(--card-highlight), var(--card-shadow);
+}
+
+/* Pressable: instant feedback on pointer-down, snappy release. */
+.press {
+  transition: transform 160ms var(--ease-out), background-color 160ms ease, opacity 160ms ease;
+}
+.press:active {
+  transform: scale(0.97);
+}
+
+/* Primary fill: ink on paper, paper on ink. */
+.varnish {
+  background: var(--text);
+  color: var(--bg);
+}
+
+.text-varnish {
+  color: var(--text);
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -104,13 +181,22 @@ body {
 }
 
 .pb-safe {
-  padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.5rem);
 }
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.overscroll-contain {
+  overscroll-behavior: contain;
+}
+
+/* ---------- Motion ---------- */
 
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -118,23 +204,93 @@ body {
   }
 }
 .animate-rise {
-  animation: rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: rise 420ms var(--ease-out) both;
 }
 
+/* Staggered entrance for page sections — decorative, never blocks input. */
+.stagger > * {
+  animation: rise 460ms var(--ease-out) both;
+}
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 40ms; }
+.stagger > *:nth-child(3) { animation-delay: 80ms; }
+.stagger > *:nth-child(4) { animation-delay: 120ms; }
+.stagger > *:nth-child(5) { animation-delay: 160ms; }
+.stagger > *:nth-child(6) { animation-delay: 200ms; }
+.stagger > *:nth-child(n + 7) { animation-delay: 240ms; }
+
 @keyframes pop {
-  0% {
-    transform: scale(1);
-  }
-  40% {
-    transform: scale(1.25);
-  }
-  100% {
-    transform: scale(1);
-  }
+  0% { transform: scale(1); }
+  40% { transform: scale(1.28); }
+  100% { transform: scale(1); }
 }
 .animate-pop {
-  animation: pop 0.3s ease-out;
+  animation: pop 320ms var(--ease-out);
 }
+
+@keyframes ring-in {
+  from { stroke-dashoffset: var(--ring-c); }
+}
+.ring-progress {
+  animation: ring-in 1100ms var(--ease-out) both;
+  transition: stroke-dashoffset 700ms var(--ease-out);
+}
+
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+/* Bottom sheet: enters with the iOS drawer curve, exits faster. */
+dialog.sheet {
+  transition: display 300ms allow-discrete, overlay 300ms allow-discrete;
+}
+dialog.sheet .sheet-panel {
+  transform: translateY(0);
+  transition: transform 420ms var(--ease-drawer);
+}
+dialog.sheet::backdrop {
+  background: rgb(0 0 0 / 0.5);
+  backdrop-filter: blur(3px);
+  opacity: 1;
+  transition: opacity 300ms ease, display 300ms allow-discrete, overlay 300ms allow-discrete;
+}
+@starting-style {
+  dialog.sheet[open] .sheet-panel {
+    transform: translateY(100%);
+  }
+  dialog.sheet[open]::backdrop {
+    opacity: 0;
+  }
+}
+@media (min-width: 640px) {
+  @starting-style {
+    dialog.sheet[open] .sheet-panel {
+      transform: translateY(24px) scale(0.97);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise,
+  .stagger > *,
+  .ring-progress {
+    animation: none !important;
+  }
+  dialog.sheet .sheet-panel {
+    transition: none;
+  }
+  .press:active {
+    transform: none;
+  }
+}
+
+/* ---------- Inputs ---------- */
 
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
@@ -145,7 +301,6 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-dialog::backdrop {
-  background: rgb(0 0 0 / 0.55);
-  backdrop-filter: blur(2px);
+input[type="range"] {
+  accent-color: var(--accent);
 }

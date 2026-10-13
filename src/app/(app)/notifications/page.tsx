@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BellOff } from "lucide-react";
 import { getT, requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { Avatar, Card, cn, Empty, PageHeader } from "@/components/ui";
@@ -23,7 +24,7 @@ export default async function NotificationsPage() {
       <PageHeader title={t.notifications.title} />
       <MarkRead hasUnread={items.some((i) => !i.read)} />
       {items.length === 0 ? (
-        <Empty icon="🔔" title={t.notifications.none} />
+        <Card><Empty icon={<BellOff className="size-6" />} title={t.notifications.none} /></Card>
       ) : (
         <Card className="divide-y divide-border overflow-hidden">
           {items.map((n) => (

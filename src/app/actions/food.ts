@@ -32,7 +32,7 @@ export async function logFood(input: { item: FoodItem; grams: number; meal: stri
       userId: user.id, date, meal, foodId, name: item.brand ? `${item.name} · ${item.brand}` : item.name, grams,
       kcal: r1(item.kcal * f), protein: r1(item.protein * f), carbs: r1(item.carbs * f), fat: r1(item.fat * f),
       fiber: r1(item.fiber * f), sugar: r1(item.sugar * f), micros: scaleMicros(asMicros(item.micros), f),
-      source: input.source === "barcode" ? "barcode" : "search",
+      source: input.source === "barcode" || input.source === "meal" ? input.source : "search",
     },
   });
   await afterLog(user.id, log.id, date);

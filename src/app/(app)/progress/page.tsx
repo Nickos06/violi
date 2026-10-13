@@ -5,7 +5,8 @@ import { addDays, today } from "@/lib/dates";
 import { trendSeries } from "@/lib/nutrition";
 import { checkInStatus, exerciseKcalByDay } from "@/lib/plan";
 import { exerciseBonus } from "@/lib/nutrition";
-import { Card, SectionTitle, fmt, cn } from "@/components/ui";
+import { Card, IconTile, SectionTitle, fmt, cn } from "@/components/ui";
+import { Leaf } from "lucide-react";
 import { IntakeBars, WeightChart } from "@/components/charts";
 import { WeighInButton } from "@/components/weigh-in";
 import { CheckInCard } from "@/components/checkin-card";
@@ -44,7 +45,7 @@ export default async function ProgressPage({ searchParams }: { searchParams: Pro
   return (
     <div className="animate-rise">
       <header className="flex items-end justify-between pb-2 pt-4">
-        <h1 className="text-[28px] font-bold tracking-tight">{t.progress.title}</h1>
+        <h1 className="font-display text-[34px] font-semibold">{t.progress.title}</h1>
         <WeighInButton last={weights.at(-1)?.weightKg} className="h-9 rounded-full bg-accent px-4 text-[13px] font-semibold text-accent-fg">+ {t.progress.logWeight}</WeighInButton>
       </header>
 
@@ -112,7 +113,7 @@ export default async function ProgressPage({ searchParams }: { searchParams: Pro
       </Card>
 
       <Link href="/nutrients" className="card mt-3 flex items-center justify-between p-4 transition hover:bg-surface-2">
-        <span className="font-semibold">🥦 {t.progress.nutrients}</span>
+        <span className="flex items-center gap-3 font-bold"><IconTile tone="var(--fiber)" size={36}><Leaf className="size-[18px]" /></IconTile>{t.progress.nutrients}</span>
         <span className="text-muted">›</span>
       </Link>
 

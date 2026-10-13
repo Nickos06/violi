@@ -2,7 +2,16 @@
 
 const el = {
   app: { name: "Violi", tagline: "Φάε έξυπνα. Προπονήσου. Ανέβα level." },
-  nav: { today: "Σήμερα", log: "Καταγραφή", progress: "Πρόοδος", social: "Social", profile: "Προφίλ", workouts: "Προπονήσεις", settings: "Ρυθμίσεις", notifications: "Ειδοποιήσεις" },
+  nav: { today: "Σήμερα", log: "Καταγραφή", progress: "Πρόοδος", social: "Social", profile: "Προφίλ", workouts: "Προπονήσεις", settings: "Ρυθμίσεις", notifications: "Ειδοποιήσεις", meals: "Γεύματα" },
+  saved: {
+    title: "Έτοιμα γεύματα", subtitle: "Φτιάξε τα μια φορά, κατέγραψέ τα ζυγίζοντας μόνο τη μερίδα.", new: "Νέο γεύμα", edit: "Επεξεργασία γεύματος",
+    name: "Όνομα γεύματος", namePlaceholder: "π.χ. Μουσακάς της μαμάς", icon: "Εικονίδιο", ingredients: "Υλικά", addIngredient: "Προσθήκη υλικού",
+    noIngredients: "Πρόσθεσε τα υλικά με τα γραμμάρια που βάζεις συνήθως.", rawWeight: "Βάρος υλικών", cookedWeight: "Βάρος έτοιμου φαγητού (g)",
+    cookedHint: "Ζύγισε το φαγητό αφού μαγειρευτεί — το νερό που χάνεται αλλάζει τις θερμίδες ανά γραμμάριο. Κενό = άθροισμα υλικών.",
+    portion: "Συνήθης μερίδα (g)", per100: "ανά 100 g", total: "Σύνολο", howMuch: "Πόσο ζύγισε η μερίδα σου;", saveAsMeal: "Αποθήκευση ως έτοιμο γεύμα",
+    saved: "Το γεύμα αποθηκεύτηκε", none: "Δεν έχεις έτοιμα γεύματα ακόμα.", items: "υλικά", manage: "Διαχείριση", deleteMeal: "Διαγραφή γεύματος",
+    fromLog: "Από τα σημερινά", portionOf: "μερίδα", whole: "Όλο",
+  },
   common: {
     save: "Αποθήκευση", cancel: "Άκυρο", delete: "Διαγραφή", edit: "Επεξεργασία", add: "Προσθήκη", close: "Κλείσιμο",
     back: "Πίσω", next: "Συνέχεια", done: "Έτοιμο", search: "Αναζήτηση", loading: "Φόρτωση…", share: "Κοινοποίηση",
@@ -91,7 +100,7 @@ const el = {
     weekly: "Αυτή την εβδομάδα", allTime: "Συνολικά", streaks: "Streaks", xp: "XP", searchUsers: "Ψάξε χρήστες…",
     visibility: "Ορατότητα", public: "Δημόσιο", friendsOnly: "Φίλοι", private: "Μόνο εγώ", ateMeal: "έφαγε", didWorkout: "έκανε προπόνηση",
     reachedLevel: "έφτασε level", unlocked: "ξεκλείδωσε", progressPost: "ενημέρωσε την πρόοδό του", deletePost: "Διαγραφή δημοσίευσης",
-    w: "W", l: "L", you: "εσύ", photo: "Φωτογραφία", mutual: "Αμοιβαίοι φίλοι βλέπουν δημοσιεύσεις «Φίλοι».",
+    w: "W", l: "L", you: "εσύ", photo: "Φωτογραφία", addPhoto: "Πρόσθεσε φωτογραφία", uploading: "Ανέβασμα…", mutual: "Αμοιβαίοι φίλοι βλέπουν δημοσιεύσεις «Φίλοι».",
     privateProfile: "Ιδιωτικό προφίλ", workoutsMinutes: "Λεπτά άσκησης", rank: "Θέση",
   },
   profile: {
@@ -144,7 +153,16 @@ type DeepString<T> = { [K in keyof T]: T[K] extends string ? string : T[K] exten
 
 const en: DeepString<Dict> = {
   app: { name: "Violi", tagline: "Eat smart. Train. Level up." },
-  nav: { today: "Today", log: "Log", progress: "Progress", social: "Social", profile: "Profile", workouts: "Workouts", settings: "Settings", notifications: "Notifications" },
+  nav: { today: "Today", log: "Log", progress: "Progress", social: "Social", profile: "Profile", workouts: "Workouts", settings: "Settings", notifications: "Notifications", meals: "Meals" },
+  saved: {
+    title: "Saved meals", subtitle: "Build them once, then just weigh your portion.", new: "New meal", edit: "Edit meal",
+    name: "Meal name", namePlaceholder: "e.g. Mum's moussaka", icon: "Icon", ingredients: "Ingredients", addIngredient: "Add ingredient",
+    noIngredients: "Add the ingredients with the grams you usually use.", rawWeight: "Ingredients weight", cookedWeight: "Finished dish weight (g)",
+    cookedHint: "Weigh the dish after cooking — water lost changes calories per gram. Empty = sum of ingredients.",
+    portion: "Usual portion (g)", per100: "per 100 g", total: "Total", howMuch: "How much did your portion weigh?", saveAsMeal: "Save as a meal",
+    saved: "Meal saved", none: "No saved meals yet.", items: "ingredients", manage: "Manage", deleteMeal: "Delete meal",
+    fromLog: "From today", portionOf: "portion", whole: "Whole",
+  },
   common: {
     save: "Save", cancel: "Cancel", delete: "Delete", edit: "Edit", add: "Add", close: "Close",
     back: "Back", next: "Continue", done: "Done", search: "Search", loading: "Loading…", share: "Share",
@@ -233,7 +251,7 @@ const en: DeepString<Dict> = {
     weekly: "This week", allTime: "All time", streaks: "Streaks", xp: "XP", searchUsers: "Search users…",
     visibility: "Visibility", public: "Public", friendsOnly: "Friends", private: "Only me", ateMeal: "ate", didWorkout: "worked out",
     reachedLevel: "reached level", unlocked: "unlocked", progressPost: "updated their progress", deletePost: "Delete post",
-    w: "W", l: "L", you: "you", photo: "Photo", mutual: "Mutual followers see “Friends” posts.",
+    w: "W", l: "L", you: "you", photo: "Photo", addPhoto: "Add photo", uploading: "Uploading…", mutual: "Mutual followers see “Friends” posts.",
     privateProfile: "Private profile", workoutsMinutes: "Workout minutes", rank: "Rank",
   },
   profile: {
