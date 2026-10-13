@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Footprints, Lock, Plus } from "lucide-react";
+import { Circle, Footprints, Lock, PenLine } from "lucide-react";
 import { useT } from "./i18n-provider";
 import { Card, fmt, IconTile } from "./ui";
 import { WorkoutIcon } from "./icons";
@@ -9,7 +9,7 @@ import { formatDuration } from "@/lib/workouts";
 
 type Act = { id: string; type: string; name: string; source: string; durationSec: number; distanceM: number | null; kcal: number };
 
-const SOURCE_LABEL: Record<string, string> = { garmin: "Garmin", strava: "Strava", fit: ".FIT", manual: "" };
+const SOURCE_LABEL: Record<string, string> = { garmin: "Garmin", strava: "Strava", fit: ".FIT", manual: "", violi: "" };
 
 export function ExerciseCard({ activities, steps, date }: { activities: Act[]; steps: number | null; date: string }) {
   const { t } = useT();
@@ -26,7 +26,8 @@ export function ExerciseCard({ activities, steps, date }: { activities: Act[]; s
           </li>
         )}
         {activities.map((a) => (
-          <li key={a.id} className="flex items-center gap-3 px-4 py-3.5">
+          <li key={a.id}>
+           <Link href={`/workouts/${a.id}`} className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-surface-2/60">
             <IconTile><WorkoutIcon type={a.type} className="size-5" /></IconTile>
             <div className="min-w-0 flex-1">
               <div className="truncate text-[14.5px] font-bold">{a.name}</div>
@@ -41,11 +42,15 @@ export function ExerciseCard({ activities, steps, date }: { activities: Act[]; s
               +{fmt(a.kcal)}
               <div className="text-[10px] font-semibold text-faint">kcal</div>
             </div>
+           </Link>
           </li>
         ))}
-        <li>
+        <li className="grid grid-cols-2 divide-x divide-border">
+          <Link href="/record" className="flex items-center gap-2.5 px-4 py-3.5 text-[14px] font-semibold text-faint transition-colors hover:bg-surface-2/60 hover:text-muted">
+            <Circle className="size-3.5" fill="currentColor" strokeWidth={0} /> {t.record.record}
+          </Link>
           <Link href={`/workouts?add=1&d=${date}`} className="flex items-center gap-2.5 px-4 py-3.5 text-[14px] font-semibold text-faint transition-colors hover:bg-surface-2/60 hover:text-muted">
-            <Plus className="size-4" strokeWidth={2.4} /> {t.today.addWorkout}
+            <PenLine className="size-4" /> {t.today.addWorkout}
           </Link>
         </li>
       </ul>

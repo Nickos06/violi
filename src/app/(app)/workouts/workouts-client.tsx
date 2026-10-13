@@ -1,26 +1,31 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, Dumbbell, FileUp, Heart, Loader2, Lock, Plus, RefreshCw, Share2, Trash2 } from "lucide-react";
-import { addWorkout, deleteWorkout, syncStrava, uploadFit } from "@/app/actions/workouts";
-import { shareWorkout } from "@/app/actions/social";
+import { Check, ChevronDown, ChevronRight, Circle, Dumbbell, FileUp, Loader2, Lock, PenLine, RefreshCw } from "lucide-react";
+import { addWorkout, syncStrava, uploadFit } from "@/app/actions/workouts";
 import { useT } from "@/components/i18n-provider";
 import { Sheet } from "@/components/sheet";
 import { VisibilityPicker } from "@/components/meal-section";
 import { PhotoPicker, type PickedPhoto } from "@/components/photo-picker";
-import { uploadImage } from "@/lib/image-client";
 import { Button, Card, cn, Empty, Field, fmt, IconTile, Input, Textarea } from "@/components/ui";
 import { WorkoutIcon } from "@/components/icons";
-import { WORKOUT_TYPES, estimateWorkoutKcal, formatDuration, type WorkoutType } from "@/lib/workouts";
+import { EffortSlider, SportPicker } from "@/components/activity/sport-picker";
+import { SwitchRow } from "@/components/activity/switch-row";
+import { uploadImage } from "@/lib/image-client";
+import { autoTitle, clock, estimateKcal, isSport, km, SPORT, sportName, speedOf, type Sport } from "@/lib/sports";
 
-type Act = { id: string; type: string; name: string; source: string; date: string; durationSec: number; distanceM: number | null; kcal: number; avgHr: number | null };
+export type ActRow = {
+  id: string; type: string; name: string; source: string; date: string; durationSec: number; distanceM: number | null; kcal: number; elevationM: number | null; thumb: string | null;
+};
 
-export function WorkoutsClient(props: { activities: Act[]; openAdd: boolean; date: string; weightKg: number; hasStrava: boolean; canShare: boolean; defaultVisibility: string }) {
+export function WorkoutsClient(props: {
+  activities: ActRow[]; openAdd: boolean; date: string; weightKg: number; hasStrava: boolean; canShare: boolean; defaultVisibility: string; recent: string[];
+}) {
   const { t, locale } = useT();
   const router = useRouter();
   const [adding, setAdding] = useState(props.openAdd);
-  const [sharing, setSharing] = useState<Act | null>(null);
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -32,7 +37,7 @@ export function WorkoutsClient(props: { activities: Act[]; openAdd: boolean; dat
     start(async () => {
       try {
         const r = await uploadFit(fd);
-        setMsg(`${t.workouts[r.type as WorkoutType] ?? r.type} · ${r.kcal} kcal`);
+        setMsg(`${sportName(r.type, locale)} · ${r.kcal} kcal`);
         router.refresh();
       } catch {
         setMsg(t.common.error);
@@ -40,17 +45,20 @@ export function WorkoutsClient(props: { activities: Act[]; openAdd: boolean; dat
     });
   };
 
-  const grouped = props.activities.reduce<Record<string, Act[]>>((acc, a) => { (acc[a.date] ??= []).push(a); return acc; }, {});
+  const grouped = props.activities.reduce<Record<string, ActRow[]>>((acc, a) => { (acc[a.date] ??= []).push(a); return acc; }, {});
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        <Button onClick={() => setAdding(true)}><Plus className="size-4" /> {t.workouts.add}</Button>
+      <div className="grid grid-cols-2 gap-2">
+        <Link href="/record" className="press varnish col-span-2 flex h-14 items-center justify-center gap-2.5 rounded-2xl text-[16px] font-extrabold">
+          <Circle className="size-4" fill="currentColor" strokeWidth={0} /> {t.record.record}
+        </Link>
+        <Button variant="secondary" onClick={() => setAdding(true)}><PenLine className="size-4" /> {t.record.manual}</Button>
         <Button variant="secondary" onClick={() => fileRef.current?.click()} disabled={pending}>
           {pending ? <Loader2 className="size-4 animate-spin" /> : <FileUp className="size-4" />} .FIT
         </Button>
         {props.hasStrava && (
-          <Button variant="secondary" className="col-span-2 sm:col-span-1" disabled={pending} onClick={() => start(async () => { try { await syncStrava(); router.refresh(); } catch { setMsg(t.common.error); } })}>
+          <Button variant="secondary" className="col-span-2" disabled={pending} onClick={() => start(async () => { try { await syncStrava(); router.refresh(); } catch { setMsg(t.common.error); } })}>
             <RefreshCw className={cn("size-4", pending && "animate-spin")} /> Strava
           </Button>
         )}
@@ -68,115 +76,152 @@ export function WorkoutsClient(props: { activities: Act[]; openAdd: boolean; dat
               {new Date(`${date}T12:00:00`).toLocaleDateString(locale === "el" ? "el-GR" : "en-GB", { weekday: "long", day: "numeric", month: "short" })}
             </h3>
             <Card className="divide-y divide-border overflow-hidden">
-              {acts.map((a) => (
-                <div key={a.id} className="flex items-center gap-3 px-4 py-3">
-                  <IconTile size={44}><WorkoutIcon type={a.type} className="size-5" /></IconTile>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[14.5px] font-bold">{a.name}</div>
-                    <div className="flex flex-wrap items-center gap-x-1.5 text-[12px] font-semibold text-faint">
-                      <span>{formatDuration(a.durationSec)}</span>
-                      {a.distanceM ? <span>· {(a.distanceM / 1000).toFixed(2)} km</span> : null}
-                      {a.avgHr ? <span className="inline-flex items-center gap-0.5">· <Heart className="size-3" fill="currentColor" /> {a.avgHr}</span> : null}
-                      {a.source !== "manual" && <span>· {{ garmin: "Garmin", strava: "Strava", fit: ".FIT" }[a.source] ?? a.source}</span>}
-                      {a.source === "strava" && <span className="inline-flex items-center gap-0.5"><Lock className="size-3" /> {t.workouts.privateStrava}</span>}
-                    </div>
-                  </div>
-                  <div className="tabular text-right text-[15px] font-extrabold text-good">+{fmt(a.kcal)}<div className="text-[10px] font-semibold text-faint">kcal</div></div>
-                  <div className="flex flex-col">
-                    {props.canShare && a.source !== "strava" && (
-                      <button onClick={() => setSharing(a)} className="grid size-8 place-items-center rounded-lg text-faint hover:text-text" aria-label={t.workouts.shareWorkout}><Share2 className="size-4" /></button>
-                    )}
-                    {a.source !== "strava" && (
-                      <button onClick={() => start(async () => { await deleteWorkout(a.id); router.refresh(); })} className="grid size-8 place-items-center rounded-lg text-faint hover:text-bad" aria-label={t.common.delete}><Trash2 className="size-4" /></button>
-                    )}
-                  </div>
-                </div>
-              ))}
+              {acts.map((a) => <ActivityRow key={a.id} a={a} />)}
             </Card>
           </div>
         ))
       )}
 
-      <AddSheet open={adding} onClose={() => setAdding(false)} date={props.date} weightKg={props.weightKg} />
-      <ShareSheet act={sharing} onClose={() => setSharing(null)} defaultVisibility={props.defaultVisibility} />
+      <ManualSheet open={adding} onClose={() => setAdding(false)} date={props.date} weightKg={props.weightKg} recent={props.recent} canShare={props.canShare} defaultVisibility={props.defaultVisibility} />
     </>
   );
 }
 
-function AddSheet({ open, onClose, date, weightKg }: { open: boolean; onClose: () => void; date: string; weightKg: number }) {
-  const { t } = useT();
+function ActivityRow({ a }: { a: ActRow }) {
+  const { t, locale } = useT();
+  const sp = speedOf(a.type, a.distanceM ?? 0, a.durationSec);
+  return (
+    <Link href={`/workouts/${a.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-surface-2/50">
+      {a.thumb ? (
+        <span className="edge grid size-14 shrink-0 place-items-center rounded-2xl">
+          <svg viewBox="0 0 56 56" className="size-14 text-text" aria-hidden><path d={a.thumb} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </span>
+      ) : (
+        <IconTile size={56}><WorkoutIcon type={a.type} className="size-5" /></IconTile>
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[14.5px] font-bold">{a.name}</div>
+        <div className="flex items-center gap-1 text-[12px] font-semibold text-faint">
+          <WorkoutIcon type={a.type} className="size-3" /> {sportName(a.type, locale)}
+          {a.source !== "manual" && a.source !== "violi" && <span>· {{ garmin: "Garmin", strava: "Strava", fit: ".FIT" }[a.source] ?? a.source}</span>}
+          {a.source === "strava" && <Lock className="size-3" aria-label={t.workouts.privateStrava} />}
+        </div>
+        <div className="tabular mt-0.5 flex flex-wrap gap-x-2 text-[12.5px] font-bold">
+          {a.distanceM ? <span>{km(a.distanceM)} km</span> : null}
+          <span>{clock(a.durationSec)}</span>
+          {a.distanceM && sp.v !== "–" ? <span className="text-muted">{sp.v}{sp.unit}</span> : null}
+        </div>
+      </div>
+      <div className="tabular text-right text-[15px] font-extrabold text-good">+{fmt(a.kcal)}<div className="text-[10px] font-semibold text-faint">kcal</div></div>
+      <ChevronRight className="size-4 shrink-0 text-faint" />
+    </Link>
+  );
+}
+
+/** Strava-style "Add manual activity". */
+function ManualSheet({ open, onClose, date, weightKg, recent, canShare, defaultVisibility }: {
+  open: boolean; onClose: () => void; date: string; weightKg: number; recent: string[]; canShare: boolean; defaultVisibility: string;
+}) {
+  const { t, locale } = useT();
   const router = useRouter();
-  const [type, setType] = useState<WorkoutType>("run");
-  const [f, setF] = useState({ name: "", minutes: "45", distance: "", kcal: "", avgHr: "", date });
+  const [sport, setSport] = useState<Sport>((recent.find(isSport) as Sport | undefined) ?? "run");
+  const [picking, setPicking] = useState(false);
+  const [f, setF] = useState({ name: "", desc: "", date, time: defaultTime(), h: "0", m: "45", s: "0", distance: "", elevation: "", kcal: "", avgHr: "" });
+  const [effort, setEffort] = useState<number | null>(null);
+  const [photo, setPhoto] = useState<PickedPhoto>(null);
+  const [share, setShare] = useState(false);
+  const [vis, setVis] = useState(defaultVisibility);
+  const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
-  const est = estimateWorkoutKcal(type, Number(f.minutes) || 0, weightKg);
+  const def = SPORT[sport];
+  const showDistance = def.gps || def.metric !== "none";
+  const seconds = (Number(f.h) || 0) * 3600 + (Number(f.m) || 0) * 60 + (Number(f.s) || 0);
+  const est = estimateKcal(sport, seconds, weightKg);
+  const title = autoTitle(sport, new Date(`${f.date}T${f.time || "12:00"}:00`), locale);
+  const distM = (Number(f.distance.replace(",", ".")) || 0) * 1000;
+  const pace = speedOf(sport, distM, seconds);
+  const num = (k: keyof typeof f, mode: "numeric" | "decimal" = "numeric") => ({
+    value: f[k], inputMode: mode, onChange: (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value.replace(mode === "numeric" ? /\D/g : /[^\d.,]/g, "") }),
+  });
+
   return (
     <Sheet open={open} onClose={onClose} title={t.workouts.add}>
       <div className="space-y-4">
-        <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5">
-          {WORKOUT_TYPES.map((w) => (
-            <button key={w} onClick={() => setType(w)} className={cn("press flex h-10 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-bold", type === w ? "varnish" : "bg-surface-2 text-muted")}>
-              <WorkoutIcon type={w} className="size-4" /> {t.workouts[w]}
-            </button>
-          ))}
-        </div>
-        <Field label={t.workouts.name}><Input value={f.name} placeholder={t.workouts[type]} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
+        <button onClick={() => setPicking(true)} className="press edge flex h-14 w-full items-center gap-3 rounded-2xl px-4 text-left">
+          <WorkoutIcon type={sport} className="size-5" />
+          <span className="flex-1 text-[15px] font-bold">{sportName(sport, locale)}</span>
+          <ChevronDown className="size-4 text-muted" />
+        </button>
+        <Input value={f.name} placeholder={title} onChange={(e) => setF({ ...f, name: e.target.value })} maxLength={80} aria-label={t.workouts.name} className="font-bold" />
+        <Textarea value={f.desc} placeholder={t.record.howWasIt} onChange={(e) => setF({ ...f, desc: e.target.value })} maxLength={2000} className="min-h-20" />
+
         <div className="grid grid-cols-2 gap-3">
-          <Field label={t.workouts.duration}><Input type="number" inputMode="numeric" value={f.minutes} onChange={(e) => setF({ ...f, minutes: e.target.value })} /></Field>
-          <Field label={t.workouts.distance}><Input type="number" inputMode="decimal" value={f.distance} onChange={(e) => setF({ ...f, distance: e.target.value })} /></Field>
-          <Field label={t.workouts.calories} hint={`${t.workouts.estimate}: ~${est}`}><Input type="number" inputMode="numeric" placeholder={String(est)} value={f.kcal} onChange={(e) => setF({ ...f, kcal: e.target.value })} /></Field>
-          <Field label={t.workouts.avgHr}><Input type="number" inputMode="numeric" value={f.avgHr} onChange={(e) => setF({ ...f, avgHr: e.target.value })} /></Field>
+          <Field label={t.workouts.date}><Input type="date" value={f.date} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setF({ ...f, date: e.target.value })} /></Field>
+          <Field label={t.record.startTime}><Input type="time" value={f.time} onChange={(e) => setF({ ...f, time: e.target.value })} /></Field>
         </div>
-        <Field label={t.workouts.date}><Input type="date" value={f.date} max={new Date().toISOString().slice(0, 10)}onChange={(e) => setF({ ...f, date: e.target.value })} /></Field>
+
+        <Field label={t.record.durationHms}>
+          <div className="grid grid-cols-3 gap-2">
+            {(["h", "m", "s"] as const).map((k) => (
+              <label key={k} className="relative">
+                <Input {...num(k)} className="pr-8 text-center" aria-label={k} />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[13px] font-bold text-faint">{k === "h" ? (locale === "el" ? "ώ" : "h") : k === "m" ? (locale === "el" ? "λ" : "m") : (locale === "el" ? "δ" : "s")}</span>
+              </label>
+            ))}
+          </div>
+        </Field>
+
+        {showDistance && (
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={t.workouts.distance} hint={distM > 0 && seconds > 0 && pace.v !== "–" ? `${pace.v}${pace.unit}` : undefined}><Input {...num("distance", "decimal")} placeholder="0" /></Field>
+            {def.gps && <Field label={t.record.elevationM}><Input {...num("elevation")} placeholder="0" /></Field>}
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label={t.workouts.calories} hint={`${t.workouts.estimate}: ~${est}`}><Input {...num("kcal")} placeholder={String(est)} /></Field>
+          <Field label={t.workouts.avgHr}><Input {...num("avgHr")} placeholder="–" /></Field>
+        </div>
+
+        <EffortSlider value={effort} onChange={setEffort} />
+        <Field label={t.record.photo}><PhotoPicker value={photo} onChange={setPhoto} compact /></Field>
+
+        {canShare && (
+          <div className="rounded-2xl bg-surface-2 px-4 py-1">
+            <SwitchRow label={t.record.shareToFeed} checked={share} onChange={setShare} />
+            {share && <div className="pb-3"><VisibilityPicker value={vis} onChange={setVis} /></div>}
+          </div>
+        )}
+
+        {error && <p className="text-[13px] font-semibold text-bad">{error}</p>}
         <Button
-          size="lg" className="w-full" disabled={pending || !(Number(f.minutes) > 0)}
+          size="lg" className="w-full" disabled={pending || seconds <= 0}
           onClick={() => start(async () => {
-            await addWorkout({
-              type, name: f.name || t.workouts[type], minutes: Number(f.minutes), distanceKm: f.distance ? Number(f.distance) : undefined,
-              kcal: f.kcal ? Number(f.kcal) : est, avgHr: f.avgHr ? Number(f.avgHr) : undefined, date: f.date,
-            });
-            onClose();
-            router.refresh();
+            setError(null);
+            try {
+              const photoUrl = photo ? await uploadImage(photo.blob) : null;
+              const id = await addWorkout({
+                type: sport, name: f.name.trim() || title, description: f.desc.trim() || undefined, date: f.date, time: f.time || undefined, seconds,
+                distanceKm: showDistance && distM > 0 ? distM / 1000 : undefined, elevationM: def.gps && f.elevation ? Number(f.elevation) : undefined,
+                kcal: f.kcal ? Number(f.kcal) : undefined, avgHr: f.avgHr ? Number(f.avgHr) : undefined, effort: effort ?? undefined, photoUrl,
+                share: canShare && share ? { visibility: vis, showMap: false } : null,
+              });
+              onClose();
+              router.push(`/workouts/${id}`);
+            } catch {
+              setError(t.common.error);
+            }
           })}
         >
           {pending ? <Loader2 className="size-4 animate-spin" /> : t.common.save}
         </Button>
       </div>
+      <SportPicker open={picking} onClose={() => setPicking(false)} value={sport} onPick={setSport} recent={recent} />
     </Sheet>
   );
 }
 
-function ShareSheet({ act, onClose, defaultVisibility }: { act: Act | null; onClose: () => void; defaultVisibility: string }) {
-  const { t } = useT();
-  const router = useRouter();
-  const [text, setText] = useState("");
-  const [vis, setVis] = useState(defaultVisibility);
-  const [picked, setPicked] = useState<PickedPhoto>(null);
-  const [pending, start] = useTransition();
-  return (
-    <Sheet open={!!act} onClose={onClose} title={t.workouts.shareWorkout}>
-      {act && (
-        <div className="space-y-3">
-          <PhotoPicker value={picked} onChange={setPicked} />
-          <div className="flex items-center gap-3 rounded-2xl bg-surface-2 p-3">
-            <IconTile><WorkoutIcon type={act.type} className="size-5" /></IconTile>
-            <div>
-              <div className="font-semibold">{act.name}</div>
-              <div className="text-[13px] text-muted">{formatDuration(act.durationSec)} · {fmt(act.kcal)} kcal</div>
-            </div>
-          </div>
-          <Textarea placeholder={t.social.composer} value={text} onChange={(e) => setText(e.target.value)} maxLength={1000} />
-          <VisibilityPicker value={vis} onChange={setVis} />
-          <Button className="w-full" disabled={pending} onClick={() => start(async () => {
-            const photoUrl = picked ? await uploadImage(picked.blob) : undefined;
-            await shareWorkout({ activityId: act.id, text, visibility: vis, photoUrl });
-            onClose();
-            router.push("/social");
-          })}>
-            {t.social.post}
-          </Button>
-        </div>
-      )}
-    </Sheet>
-  );
+function defaultTime() {
+  const d = new Date(Date.now() - 60 * 60 * 1000);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }

@@ -28,6 +28,16 @@ export function workoutXp(durationSec: number, kcal: number) {
  * Awards XP idempotently: (userId, type, refId) is unique, so repeating an action never double-counts.
  * Returns the amount actually awarded (0 if already awarded).
  */
+/** Takes back XP awarded for something that was deleted (so create → delete can't farm XP). */
+export async function revokeXp(userId: string, type: string, refId: string) {
+  const ev = await db.xpEvent.findUnique({ where: { userId_type_refId: { userId, type, refId } } });
+  if (!ev) return;
+  await db.$transaction([
+    db.xpEvent.delete({ where: { id: ev.id } }),
+    db.user.update({ where: { id: userId }, data: { xp: { decrement: ev.amount } } }),
+  ]);
+}
+
 export async function awardXp(userId: string, type: string, refId: string, amount: number, date = today()) {
   if (amount <= 0) {
     await db.xpEvent.upsert({ where: { userId_type_refId: { userId, type, refId } }, create: { userId, type, refId, amount: 0, date }, update: {} });

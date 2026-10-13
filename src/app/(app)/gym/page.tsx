@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, BookOpen, Calculator, ChevronRight, Footprints, Play, Plus, Trophy } from "lucide-react";
+import { BarChart3, BookOpen, Calculator, ChevronRight, Circle, Footprints, Play, Plus, Trophy } from "lucide-react";
 import { getT, requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { today, weekStart } from "@/lib/dates";
@@ -30,6 +30,11 @@ export default async function GymPage() {
       <PageHeader title={t.gym.title} subtitle={t.gym.subtitle} />
 
       <StartWorkoutButton label={t.gym.startEmpty} resumeLabel={`${t.gym.resume} · ${t.gym.inProgress}`} />
+      <Link href="/record" className="card press mt-2 flex h-14 items-center gap-3 px-4 text-[15px] font-bold">
+        <Circle className="size-3.5" fill="currentColor" strokeWidth={0} />
+        <span className="flex-1">{t.record.record} · <span className="font-semibold text-muted">{locale === "el" ? "τρέξιμο, ποδήλατο και άλλα" : "run, ride and more"}</span></span>
+        <ChevronRight className="size-4 text-faint" />
+      </Link>
 
       <div className="mt-3 grid grid-cols-4 gap-2">
         {[

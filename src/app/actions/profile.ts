@@ -85,7 +85,7 @@ export async function deleteWeight(id: string) {
 
 const SettingsSchema = z.object({
   locale: z.enum(["el", "en"]).optional(),
-  theme: z.enum(["dark", "light"]).optional(),
+  theme: z.enum(["system", "light", "dark"]).optional(),
   profilePublic: z.boolean().optional(),
   shareMeals: z.boolean().optional(),
   shareWorkouts: z.boolean().optional(),

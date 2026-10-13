@@ -5,7 +5,10 @@ import { useOptimistic, useState, useTransition } from "react";
 import { Flame, MessageCircle, MoreHorizontal, Trash2, Globe, Users, Lock, Trophy, TrendingDown, TrendingUp, ArrowUp } from "lucide-react";
 import { addComment, deleteComment, deletePost, react } from "@/app/actions/social";
 import type { PostView } from "@/lib/social";
+import { asRoute } from "@/lib/route";
 import { formatDuration } from "@/lib/workouts";
+import { clock, km, sportName, sportOf, speedOf } from "@/lib/sports";
+import { RouteSvg } from "./activity/route-svg";
 import { MEAL_SLOT_ICON, WorkoutIcon } from "./icons";
 import { useT } from "./i18n-provider";
 import { Avatar, cn, fmt, IconTile } from "./ui";
@@ -156,16 +159,7 @@ export function PostCard({ post, onDeleted }: { post: PostView; onDeleted?: () =
         </div>
       )}
 
-      {post.type === "workout" && (
-        <div className="mx-4 mt-3 rounded-2xl bg-surface-2 p-3">
-          <div className="text-[15px] font-bold">{p.name as string}</div>
-          <div className="mt-2 grid grid-cols-3 text-center">
-            <div><div className="tabular font-bold">{formatDuration(p.durationSec as number)}</div><div className="text-[11px] text-muted">{t.workouts.duration.split(" ")[0]}</div></div>
-            <div><div className="tabular font-bold">{p.distanceM ? ((p.distanceM as number) / 1000).toFixed(1) : "—"}</div><div className="text-[11px] text-muted">km</div></div>
-            <div><div className="tabular font-bold text-good">{fmt(p.kcal as number)}</div><div className="text-[11px] text-muted">kcal</div></div>
-          </div>
-        </div>
-      )}
+      {post.type === "workout" && <WorkoutSummary p={p} />}
 
       <footer className="mt-4 flex items-center gap-2 border-t border-border px-3 py-2.5">
         <button onClick={() => doReact("W")} className={cn("press flex h-9 min-w-14 items-center justify-center gap-1.5 rounded-full px-3.5 text-[14px] font-black transition-colors", r.mine === "W" ? "bg-good/15 text-good" : "bg-surface-2/60 text-muted hover:bg-surface-2")}>
@@ -214,5 +208,42 @@ export function PostCard({ post, onDeleted }: { post: PostView; onDeleted?: () =
         </div>
       )}
     </article>
+  );
+}
+
+/** Strava-style activity block: title, key stats for the sport, and the (privacy-trimmed) route. */
+function WorkoutSummary({ p }: { p: Record<string, unknown> }) {
+  const { t, locale } = useT();
+  const type = String(p.type ?? "other");
+  const dist = Number(p.distanceM) || 0, sec = Number(p.durationSec) || 0;
+  const route = asRoute(p.route);
+  const def = sportOf(type);
+  const sp = speedOf(type, dist, sec);
+  const stats = dist > 0
+    ? [
+        { l: t.record.distance, v: km(dist), u: "km" },
+        { l: def.metric === "speed" || def.metric === "none" ? t.record.avgSpeed : t.record.avgPace, v: sp.v, u: sp.unit },
+        { l: t.record.time, v: clock(sec) },
+      ]
+    : [
+        { l: t.record.time, v: clock(sec) },
+        { l: t.record.calories, v: fmt(Number(p.kcal) || 0), u: "kcal" },
+        p.avgHr ? { l: t.workouts.avgHr, v: String(p.avgHr), u: "bpm" } : { l: t.record.effortShort, v: p.effort ? `${p.effort}/10` : "–" },
+      ];
+  return (
+    <div className="mx-4 mt-3 overflow-hidden rounded-2xl bg-surface-2">
+      <div className="p-3">
+        <div className="text-[15px] font-bold">{String(p.name ?? sportName(type, locale))}</div>
+        <div className="mt-2 grid grid-cols-3">
+          {stats.map((s) => (
+            <div key={s.l}>
+              <div className="text-[10.5px] font-bold uppercase tracking-[0.08em] text-faint">{s.l}</div>
+              <div className="tabular text-[16px] font-extrabold">{s.v}{s.u && <span className="ml-0.5 text-[11px] font-bold text-muted">{s.u}</span>}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {route && <RouteSvg route={route} width={360} height={170} className="block h-[170px] w-full border-t border-border bg-surface" />}
+    </div>
   );
 }

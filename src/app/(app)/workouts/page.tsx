@@ -2,6 +2,7 @@ import { getT, requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { isValidDay, today } from "@/lib/dates";
 import { latestWeight } from "@/lib/plan";
+import { asRoute, routePath, simplify } from "@/lib/route";
 import { PageHeader } from "@/components/ui";
 import { WorkoutsClient } from "./workouts-client";
 
@@ -26,9 +27,14 @@ export default async function WorkoutsPage({ searchParams }: { searchParams: Pro
         hasStrava={!!strava}
         canShare={user.shareWorkouts}
         defaultVisibility={user.defaultVisibility}
-        activities={activities.map((a) => ({
-          id: a.id, type: a.type, name: a.name, source: a.source, date: a.date, durationSec: a.durationSec, distanceM: a.distanceM, kcal: a.kcal, avgHr: a.avgHr,
-        }))}
+        recent={[...new Set(activities.filter((a) => a.source === "violi" || a.source === "manual").map((a) => a.type))]}
+        activities={activities.map((a) => {
+          const route = asRoute(a.route);
+          return {
+            id: a.id, type: a.type, name: a.name, source: a.source, date: a.date, durationSec: a.durationSec, distanceM: a.distanceM, kcal: a.kcal,
+            elevationM: a.elevationM, thumb: route ? routePath(simplify(route, 80), 56, 56, 9) : null,
+          };
+        })}
       />
     </div>
   );

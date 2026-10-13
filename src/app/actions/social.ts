@@ -7,17 +7,8 @@ import { requireUserApi } from "@/lib/auth";
 import { awardCapped, awardXp, unlock, XP } from "@/lib/gamification";
 import { trendSeries } from "@/lib/nutrition";
 import { addDays, today } from "@/lib/dates";
+import { afterPost, createWorkoutPost, ownPhoto, Visibility } from "@/lib/social-post";
 
-const Visibility = z.enum(["public", "friends", "private"]);
-
-/** Only accept images this app stored (see /api/uploads). */
-const ownPhoto = (url?: string | null) => (url && /^\/api\/files\/[a-f0-9]{24}\.(jpg|png|webp|gif)$/.test(url) ? url : null);
-
-async function afterPost(userId: string, postId: string) {
-  await awardCapped(userId, "post", postId, XP.post, XP.postDailyCap);
-  await unlock(userId, "first_post");
-  revalidatePath("/social");
-}
 
 export async function createTextPost(input: { text?: string; visibility?: string; photoUrl?: string | null }) {
   const user = await requireUserApi();
@@ -47,20 +38,12 @@ export async function shareMeal(input: { date: string; meal: string; text?: stri
   return post.id;
 }
 
-export async function shareWorkout(input: { activityId: string; text?: string; visibility?: string; photoUrl?: string | null }) {
+export async function shareWorkout(input: { activityId: string; text?: string; visibility?: string; photoUrl?: string | null; showMap?: boolean }) {
   const user = await requireUserApi();
   const a = await db.activity.findFirst({ where: { id: input.activityId, userId: user.id } });
   // Strava data may only be displayed to the athlete who owns it (Strava API Agreement).
   if (!a || a.source === "strava") throw new Error("NOT_SHAREABLE");
-  const post = await db.post.create({
-    data: {
-      userId: user.id, type: "workout", text: input.text?.trim().slice(0, 1000) || null, photoUrl: ownPhoto(input.photoUrl),
-      visibility: Visibility.parse(input.visibility ?? user.defaultVisibility), refId: a.id,
-      payload: { type: a.type, name: a.name, durationSec: a.durationSec, distanceM: a.distanceM, kcal: a.kcal, avgHr: a.avgHr, source: a.source },
-    },
-  });
-  await afterPost(user.id, post.id);
-  return post.id;
+  return createWorkoutPost(user, a, input);
 }
 
 export async function shareProgress(input: { text?: string; visibility?: string; photoUrl?: string | null }) {

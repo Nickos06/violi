@@ -67,9 +67,13 @@ type StravaActivity = {
 };
 
 const TYPE_MAP: Record<string, string> = {
-  Run: "run", TrailRun: "run", VirtualRun: "run", Ride: "ride", VirtualRide: "ride", MountainBikeRide: "ride", GravelRide: "ride", EBikeRide: "ride",
-  Swim: "swim", Walk: "walk", Hike: "hike", WeightTraining: "strength", Crossfit: "hiit", HighIntensityIntervalTraining: "hiit",
-  Yoga: "yoga", Soccer: "football", Basketball: "basketball", Tennis: "tennis",
+  Run: "run", TrailRun: "trail_run", VirtualRun: "treadmill", Walk: "walk", Hike: "hike",
+  Ride: "ride", MountainBikeRide: "mountain_bike", EMountainBikeRide: "mountain_bike", GravelRide: "gravel_ride", EBikeRide: "ebike_ride", VirtualRide: "indoor_ride",
+  Swim: "swim", Rowing: "rowing", VirtualRow: "rowing", Kayaking: "kayaking", Canoeing: "kayaking", StandUpPaddling: "sup", Surfing: "surf", Sail: "sail",
+  AlpineSki: "alpine_ski", BackcountrySki: "alpine_ski", Snowboard: "snowboard", NordicSki: "nordic_ski", InlineSkate: "inline_skate", RollerSki: "nordic_ski", Skateboard: "skateboard",
+  WeightTraining: "strength", Crossfit: "crossfit", HighIntensityIntervalTraining: "hiit", Yoga: "yoga", Pilates: "pilates", Elliptical: "elliptical", StairStepper: "stair_stepper", Workout: "other",
+  Soccer: "football", Basketball: "basketball", Tennis: "tennis", Padel: "padel", Volleyball: "volleyball", Badminton: "badminton", TableTennis: "table_tennis",
+  RockClimbing: "climbing", Golf: "golf", Dance: "dance",
 };
 
 function kcalOf(a: StravaActivity) {

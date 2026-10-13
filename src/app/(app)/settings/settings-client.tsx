@@ -8,6 +8,8 @@ import { disconnect } from "@/app/actions/integrations";
 import { logout } from "@/app/actions/auth";
 import { useT } from "@/components/i18n-provider";
 import { VisibilityPicker } from "@/components/meal-section";
+import { ThemeSwitch } from "@/components/theme-switch";
+import { asThemePref } from "@/lib/theme";
 import { Button, Card, cn, Field, Input, Select, SectionTitle, Textarea } from "@/components/ui";
 
 type U = {
@@ -60,7 +62,7 @@ export function SettingsClient({ user, garmin, strava, flash }: { user: U; garmi
           <Seg value={user.locale} options={[{ v: "el", l: "Ελληνικά" }, { v: "en", l: "English" }]} onChange={(v) => save("app", () => updateSettings({ locale: v as "el" | "en" }))} />
         </Row>
         <Row label={t.settings.theme}>
-          <Seg value={user.theme} options={[{ v: "dark", l: t.settings.dark }, { v: "light", l: t.settings.light }]} onChange={(v) => save("app", () => updateSettings({ theme: v as "dark" | "light" }))} />
+          <ThemeSwitch value={asThemePref(user.theme)} signedIn labels />
         </Row>
       </Card>
 

@@ -3,8 +3,11 @@ import FitParser from "fit-file-parser";
 import { toDay } from "../dates";
 
 const SPORT_MAP: Record<string, string> = {
-  running: "run", cycling: "ride", e_biking: "ride", swimming: "swim", walking: "walk", hiking: "hike", training: "strength",
-  fitness_equipment: "strength", hiit: "hiit", soccer: "football", basketball: "basketball", tennis: "tennis", racket: "tennis",
+  running: "run", cycling: "ride", e_biking: "ebike_ride", swimming: "swim", walking: "walk", hiking: "hike", training: "strength",
+  fitness_equipment: "strength", hiit: "hiit", soccer: "football", basketball: "basketball", tennis: "tennis", racket: "padel",
+  rowing: "rowing", paddling: "kayaking", kayaking: "kayaking", stand_up_paddleboarding: "sup", surfing: "surf", sailing: "sail",
+  alpine_skiing: "alpine_ski", snowboarding: "snowboard", cross_country_skiing: "nordic_ski", inline_skating: "inline_skate",
+  rock_climbing: "climbing", golf: "golf", boxing: "boxing", mixed_martial_arts: "martial_arts", dance: "dance", volleyball: "volleyball",
 };
 
 type FitSession = {

@@ -5,7 +5,7 @@ import { ArrowLeft, Beef, Check, Flame, Leaf, Salad, Scale, Dumbbell, Droplet, t
 import { completeOnboarding } from "@/app/actions/profile";
 import { useT } from "@/components/i18n-provider";
 import { Button, cn, Field, IconTile, Input, Ring } from "@/components/ui";
-import { ViolinMark } from "@/components/logo";
+import { BrandMark } from "@/components/logo";
 import { computeTargets, initialExpenditure, type ActivityLevel, type DietType, type GoalType } from "@/lib/nutrition";
 
 const ACTIVITY: ActivityLevel[] = ["sedentary", "light", "moderate", "active", "very_active"];
@@ -71,7 +71,7 @@ export function Onboarding({ name }: { name: string }) {
             <ArrowLeft className="size-5" />
           </button>
         ) : (
-          <ViolinMark size={34} />
+          <BrandMark height={26} />
         )}
         <div className="flex flex-1 gap-1.5">
           {steps.map((_, i) => (

@@ -5,7 +5,7 @@ import { useActionState } from "react";
 import { login, signup, type AuthState } from "@/app/actions/auth";
 import { Button, Field, Input } from "./ui";
 import { useT } from "./i18n-provider";
-import { ViolinMark, Wordmark } from "./logo";
+import { BrandMark, Wordmark } from "./logo";
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const { t } = useT();
@@ -14,8 +14,8 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
 
   return (
     <div className="relative mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center px-5 py-12">
-      <Link href="/" className="press mb-12 self-start"><Wordmark size={32} /></Link>
-      <div className="pointer-events-none absolute right-0 top-16 rotate-12 max-sm:hidden"><ViolinMark size={72} /></div>
+      <Link href="/" className="press mb-12 self-start" aria-label="Violi"><Wordmark size={30} /></Link>
+      <div className="pointer-events-none absolute right-0 top-16 max-sm:hidden"><BrandMark height={56} /></div>
       <h1 className="font-display text-[38px] font-semibold leading-tight">{mode === "login" ? t.auth.welcomeBack : t.auth.createTitle}</h1>
       <p className="mt-2 text-[15px] text-muted">{t.app.tagline}</p>
 

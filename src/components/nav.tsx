@@ -5,9 +5,11 @@ import { usePathname } from "next/navigation";
 import { Bell, ChartSpline, Dumbbell, Footprints, House, Plus, Settings, UserRound, Users, ChefHat } from "lucide-react";
 import { cn } from "./ui";
 import { useT } from "./i18n-provider";
-import { ViolinMark, Wordmark } from "./logo";
+import { BrandMark, Wordmark } from "./logo";
+import { ThemeSwitch } from "./theme-switch";
+import type { ThemePref } from "@/lib/theme";
 
-export function Nav({ username, unread }: { username: string; unread: number }) {
+export function Nav({ username, unread, theme }: { username: string; unread: number; theme: ThemePref }) {
   const path = usePathname();
   const { t } = useT();
   const items = [
@@ -51,7 +53,7 @@ export function Nav({ username, unread }: { username: string; unread: number }) 
 
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-bg/60 px-4 py-7 backdrop-blur-xl md:flex">
-        <Link href="/today" className="mb-9 px-2"><Wordmark size={34} /></Link>
+        <Link href="/today" className="mb-9 px-2" aria-label="Violi"><Wordmark size={30} /></Link>
         <ul className="space-y-1">
           {[
             ...items.filter((i) => !i.primary),
@@ -76,6 +78,7 @@ export function Nav({ username, unread }: { username: string; unread: number }) 
         <Link href="/log" className="press varnish mt-7 flex h-12 items-center justify-center gap-2 rounded-2xl font-bold">
           <Plus className="size-5" strokeWidth={2.6} /> {t.today.addFood}
         </Link>
+        <ThemeSwitch value={theme} signedIn className="mt-auto" />
       </aside>
     </>
   );
@@ -97,7 +100,7 @@ function SideLink({ href, active, icon, children }: { href: string; active: bool
 export function TopBar({ unread }: { unread: number }) {
   return (
     <div className="flex items-center justify-between pt-[max(env(safe-area-inset-top,0px),12px)] md:hidden">
-      <Link href="/today" className="press"><Wordmark size={30} /></Link>
+      <Link href="/today" className="press" aria-label="Violi"><Wordmark size={26} /></Link>
       <div className="flex items-center gap-0.5">
         <Link href="/progress" className="press grid size-10 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-text" aria-label="Progress">
           <ChartSpline className="size-[21px]" />
@@ -117,7 +120,7 @@ export function TopBar({ unread }: { unread: number }) {
   );
 }
 
-/** Kept for places that only need the bare mark. */
-export function Logo({ size = 28 }: { size?: number }) {
-  return <ViolinMark size={size} />;
+/** Bare mark for places that don't need the name. */
+export function Logo({ size = 24 }: { size?: number }) {
+  return <BrandMark height={size} />;
 }

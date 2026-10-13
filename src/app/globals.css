@@ -37,8 +37,9 @@
   --edge-strong: linear-gradient(150deg, #dcdcdc 0%, #9c9c9c 28%, #ececec 52%, #8f8f8f 78%, #d6d6d6 100%);
   --chrome-fill: linear-gradient(180deg, #3d3d3d 0%, #171717 52%, #040404 100%);
   --chrome-text: linear-gradient(180deg, #2e2e2e 0%, #000000 55%, #4a4a4a 100%);
-  --logo-a: #4a4a4a;
-  --logo-b: #000000;
+  /* Brand mark (brand/BRAND.md): ink = pulse, violin, bow stick · accent = stave, string, bridge, bow hair. */
+  --logo-a: #0a0a0a;
+  --logo-b: #9a9a9a;
   --card-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -18px rgb(0 0 0 / 0.25);
   --card-highlight: inset 0 1px 0 rgb(255 255 255 / 0.9);
   color-scheme: light;
@@ -72,8 +73,8 @@
   --edge-strong: linear-gradient(150deg, #9a9a9a 0%, #3d3d3d 28%, #262626 52%, #4d4d4d 78%, #a8a8a8 100%);
   --chrome-fill: linear-gradient(180deg, #ffffff 0%, #e8e8e8 38%, #b4b4b4 100%);
   --chrome-text: linear-gradient(180deg, #ffffff 25%, #9b9b9b 100%);
-  --logo-a: #ffffff;
-  --logo-b: #9a9a9a;
+  --logo-a: #fafafa;
+  --logo-b: #7c7c7c;
   --card-shadow: 0 10px 30px -20px rgb(0 0 0 / 0.9);
   --card-highlight: inset 0 1px 0 rgb(255 255 255 / 0.06);
   color-scheme: dark;
@@ -159,6 +160,17 @@ button,
 .tabular {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
+}
+
+/* Wordmark face (brand/BRAND.md): DM Mono 500, Manrope 800 as fallback. */
+/* Switching theme must not animate every colour transition on the page at once. */
+.theme-switching,
+.theme-switching * {
+  transition: none !important;
+}
+
+.font-wordmark {
+  font-family: var(--font-dm-mono), var(--font-manrope), ui-monospace, monospace;
 }
 
 .font-display {
@@ -360,4 +372,62 @@ input[type="number"] {
 
 input[type="range"] {
   accent-color: var(--accent);
+}
+
+/* ── Maps (Leaflet) ───────────────────────────────────────────────────────── */
+/* Background matches the basemap's base tone so sub-pixel gaps between tiles never show as lines. */
+.leaflet-container {
+  background: #efefef;
+  font-family: var(--font-display);
+}
+[data-theme="dark"] .leaflet-container {
+  background: #474749;
+}
+.leaflet-control-attribution {
+  background: color-mix(in srgb, var(--bg) 72%, transparent) !important;
+  color: var(--faint) !important;
+  font-size: 9.5px !important;
+  border-radius: 8px 0 0 0;
+  backdrop-filter: blur(8px);
+}
+.leaflet-control-attribution a {
+  color: var(--muted) !important;
+}
+
+/* Live position: ink dot with a soft pulse. */
+.map-me span {
+  position: absolute;
+  inset: 4px;
+  border-radius: 999px;
+  background: var(--text);
+  border: 3px solid var(--bg);
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.35);
+}
+.map-me span::after {
+  content: "";
+  position: absolute;
+  inset: -9px;
+  border-radius: 999px;
+  border: 2px solid var(--text);
+  opacity: 0;
+  animation: map-pulse 2s cubic-bezier(0.23, 1, 0.32, 1) infinite;
+}
+@keyframes map-pulse {
+  0% { transform: scale(0.6); opacity: 0.5; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-me span::after { animation: none; }
+}
+
+/* Recorder 3-2-1 countdown: each number lands from slightly larger. */
+.countdown-num {
+  animation: countdown-in 600ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+@keyframes countdown-in {
+  from { opacity: 0; transform: scale(1.35); filter: blur(6px); }
+  to { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .countdown-num { animation: none; }
 }

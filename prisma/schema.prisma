@@ -166,17 +166,24 @@ model WeightEntry {
 model Activity {
   id          String   @id @default(cuid())
   userId      String
-  source      String // manual | garmin | strava | fit
+  source      String // manual | violi (recorded in the app) | garmin | strava | fit
   externalId  String?
-  type        String // run | ride | swim | walk | strength | hiit | yoga | other …
+  type        String // sport key from src/lib/sports.ts (run, trail_run, ride, swim, …)
   name        String
+  description String?
   startAt     DateTime
   date        String
-  durationSec Int
+  durationSec Int // moving time
+  elapsedSec  Int?
   distanceM   Float?
   kcal        Float
   avgHr       Int?
-  elevationM  Float?
+  elevationM  Float? // elevation gain
+  maxSpeed    Float? // m/s
+  effort      Int? // perceived exertion 1–10
+  route       Json? // { pts: [lat, lng, ele|null, tSec, distM][], breaks: number[] }
+  splits      Json? // [{ sec, elev }] per km
+  photoUrl    String?
   createdAt   DateTime @default(now())
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 

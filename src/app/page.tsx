@@ -2,8 +2,11 @@ import { redirect } from "next/navigation";
 import { Camera, ChefHat, Flame, Footprints, Trophy, Watch } from "lucide-react";
 import { getT, getUser } from "@/lib/auth";
 import { IconTile, LinkButton, Ring } from "@/components/ui";
-import { ViolinMark, Wordmark } from "@/components/logo";
+import { BrandMark, Wordmark } from "@/components/logo";
 import { LocaleSwitch } from "@/components/locale-switch";
+import { ThemeSwitch } from "@/components/theme-switch";
+import { asThemePref, THEME_COOKIE } from "@/lib/theme";
+import { cookies } from "next/headers";
 
 export default async function Landing() {
   const user = await getUser();
@@ -19,8 +22,9 @@ export default async function Landing() {
   return (
     <div className="relative mx-auto max-w-6xl overflow-x-clip px-5">
       <header className="flex items-center justify-between pb-4 pt-[max(env(safe-area-inset-top,0px),20px)]">
-        <Wordmark size={32} />
+        <Wordmark size={30} />
         <div className="flex items-center gap-1">
+          <ThemeSwitch value={asThemePref((await cookies()).get(THEME_COOKIE)?.value)} signedIn={false} className="mr-1" />
           <LocaleSwitch locale={locale} />
           <LinkButton href="/login" variant="ghost" size="sm">{t.auth.login}</LinkButton>
         </div>
@@ -44,8 +48,8 @@ export default async function Landing() {
 
         {/* Product preview */}
         <div className="relative mx-auto w-full max-w-[340px]">
-          <div className="absolute -left-8 -top-10 rotate-[-12deg] max-md:hidden">
-            <ViolinMark size={96} />
+          <div className="absolute -left-10 -top-14 max-md:hidden">
+            <BrandMark height={72} />
           </div>
           <div className="card animate-rise relative rounded-[36px] p-5 [animation-delay:150ms]">
             <div className="flex items-center justify-between">
