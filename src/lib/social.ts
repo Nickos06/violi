@@ -120,7 +120,7 @@ export async function searchUsers(viewerId: string, q: string) {
     });
   }
   return db.user.findMany({
-    where: { NOT: { id: viewerId }, OR: [{ username: { contains: n } }, { name: { contains: q.trim() } }] },
+    where: { NOT: { id: viewerId }, OR: [{ username: { contains: n, mode: "insensitive" } }, { name: { contains: q.trim(), mode: "insensitive" } }] },
     select: { id: true, name: true, username: true, avatarColor: true, avatarUrl: true, xp: true },
     take: 20,
   });

@@ -24,9 +24,11 @@ Web app για μέτρηση θερμίδων, μακρο, βιταμινών �
 ```bash
 npm install
 cp .env.example .env        # βάλε τα κλειδιά που έχεις
-npm run setup               # δημιουργεί τη βάση (SQLite) και τα δεδομένα (τρόφιμα, ασκήσεις, demo)
+npm run setup               # φτιάχνει τους πίνακες στην Postgres και τα δεδομένα (τρόφιμα, ασκήσεις, demo)
 npm run dev                 # http://localhost:3000
 ```
+
+Η βάση είναι Postgres (Neon μέσω Vercel → Storage) και οι φωτογραφίες πάνε στο Vercel Blob, ώστε το ίδιο setup να δουλεύει τοπικά και στο Vercel. Τοπικά, χωρίς `BLOB_READ_WRITE_TOKEN`, οι φωτογραφίες σώζονται στο `./uploads`. Αν έχεις δεδομένα από την παλιά SQLite (`prisma/dev.db`): `npm run db:copy-local`.
 
 Σε υπάρχουσα βάση, μετά από `git pull`: `npx prisma db push && npx tsx prisma/seed-gym.ts` (προσθέτει μόνο ό,τι λείπει).
 
@@ -36,6 +38,8 @@ npm run dev                 # http://localhost:3000
 
 | Μεταβλητή | Για τι | Πού |
 |---|---|---|
+| `DATABASE_URL`, `DATABASE_URL_UNPOOLED` | Βάση Postgres | Vercel → Storage → Neon |
+| `BLOB_READ_WRITE_TOKEN` | Φωτογραφίες (Vercel Blob) | Vercel → Storage → Blob |
 | `ANTHROPIC_API_KEY` | AI φωτογραφία & περιγραφή γεύματος (Claude) | https://console.anthropic.com |
 | `USDA_API_KEY` | Αναζήτηση USDA (το `DEMO_KEY` δουλεύει με όρια) | https://fdc.nal.usda.gov/api-key-signup |
 | `STRAVA_CLIENT_ID` / `SECRET` | Σύνδεση Strava | https://www.strava.com/settings/api (Authorization Callback Domain: `localhost`) |
@@ -52,7 +56,7 @@ npm run dev                 # http://localhost:3000
 
 ## Τεχνολογία
 
-Next.js 15 (App Router, Server Actions) · React 19 · TypeScript · Tailwind CSS 4 · Prisma + SQLite · Claude API (`claude-opus-5-5`, vision + structured outputs) · Open Food Facts · USDA FoodData Central · fit-file-parser
+Next.js 15 (App Router, Server Actions) · React 19 · TypeScript · Tailwind CSS 4 · Prisma + Postgres (Neon) · Vercel Blob · Claude API (`claude-opus-5-5`, vision + structured outputs) · Open Food Facts · USDA FoodData Central · fit-file-parser
 
 ```
 src/lib/nutrition.ts      BMR, στόχοι, adaptive TDEE, τάση βάρους
@@ -66,6 +70,6 @@ src/app/(app)/            σελίδες: today, log, progress, nutrients, worko
 
 ## Production
 
-- Άλλαξε το `provider` στο `prisma/schema.prisma` σε `postgresql` και βάλε `DATABASE_URL` (π.χ. Neon/Supabase).
-- Οι φωτογραφίες αποθηκεύονται τοπικά στο `uploads/` ([`src/lib/uploads.ts`](src/lib/uploads.ts)). Για serverless hosting (Vercel) άλλαξέ το σε object storage (Vercel Blob / S3 / R2).
+- Vercel → Storage: σύνδεσε μια βάση **Neon** (δίνει `DATABASE_URL` / `DATABASE_URL_UNPOOLED`) και ένα **Blob** store (δίνει `BLOB_READ_WRITE_TOKEN`; διάλεξε Private, αλλιώς βάλε `BLOB_ACCESS=public`).
+- Οι πίνακες στήνονται μία φορά από τον υπολογιστή σου με τα ίδια URLs στο `.env`: `npm run setup` (ή `npx prisma db push` + `npm run db:copy-local` για να ανέβουν τα τοπικά δεδομένα).
 - Όρισε `APP_URL` στο δημόσιο domain για τα OAuth redirects.

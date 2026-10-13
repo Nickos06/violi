@@ -10,11 +10,13 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma db push --force-reset && tsx prisma/seed.ts",
-    "setup": "prisma db push && tsx prisma/seed.ts"
+    "setup": "prisma db push && tsx prisma/seed.ts",
+    "db:copy-local": "tsx prisma/copy-sqlite-to-postgres.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",
     "@prisma/client": "^6.19.3",
+    "@vercel/blob": "^2.8.0",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "fit-file-parser": "^6.2.2",
