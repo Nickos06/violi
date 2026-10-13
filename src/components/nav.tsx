@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, ChartSpline, Dumbbell, Footprints, House, Plus, Settings, UserRound, Users, ChefHat } from "lucide-react";
+import { Bell, ChartSpline, CircleDot, Dumbbell, Footprints, House, Plus, Settings, UserRound, Users, ChefHat } from "lucide-react";
 import { cn } from "./ui";
 import { useT } from "./i18n-provider";
 import { BrandMark, Wordmark } from "./logo";
@@ -14,7 +14,8 @@ export function Nav({ username, unread, theme }: { username: string; unread: num
   const { t } = useT();
   const items = [
     { href: "/today", label: t.nav.today, icon: House },
-    { href: "/gym", label: t.nav.gym, icon: Dumbbell },
+    { href: "/gym", label: t.nav.gym, short: t.nav.gymTab, icon: Dumbbell },
+    { href: "/record", label: t.nav.record, icon: CircleDot },
     { href: "/log", label: t.nav.log, icon: Plus, primary: true },
     { href: "/social", label: t.nav.social, icon: Users },
     { href: `/u/${username}`, label: t.nav.profile, icon: UserRound },
@@ -24,9 +25,9 @@ export function Nav({ username, unread, theme }: { username: string; unread: num
   return (
     <>
       {/* Phone: floating glass tab bar */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(env(safe-area-inset-bottom,0px),12px)] md:hidden" aria-label="Main">
-        <ul style={{ ["--edge-fill" as string]: "color-mix(in oklab, var(--surface) 82%, transparent)" }} className="edge mx-auto grid max-w-md grid-cols-5 items-center rounded-[26px] px-1.5 py-1.5 shadow-[0_8px_30px_-12px_rgb(0_0_0/0.25)] backdrop-blur-2xl backdrop-saturate-150">
-          {items.map(({ href, label, icon: Icon, primary }) => {
+      <nav className="fixed inset-x-0 bottom-0 z-40 px-2.5 pb-[max(env(safe-area-inset-bottom,0px),12px)] md:hidden" aria-label="Main">
+        <ul style={{ ["--edge-fill" as string]: "color-mix(in oklab, var(--surface) 82%, transparent)" }} className="edge mx-auto grid max-w-md grid-cols-6 items-center rounded-[26px] px-1 py-1.5 shadow-[0_8px_30px_-12px_rgb(0_0_0/0.25)] backdrop-blur-2xl backdrop-saturate-150">
+          {items.map(({ href, label, short, icon: Icon, primary }) => {
             const active = isActive(href);
             return (
               <li key={href} className="flex justify-center">
@@ -38,10 +39,10 @@ export function Nav({ username, unread, theme }: { username: string; unread: num
                   <Link
                     href={href}
                     aria-current={active ? "page" : undefined}
-                    className={cn("press relative flex h-[52px] w-full flex-col items-center justify-center gap-1 rounded-[18px] text-[10.5px] font-semibold transition-colors", active ? "text-text" : "text-faint")}
+                    className={cn("press relative flex h-[52px] w-full flex-col items-center justify-center gap-1 rounded-[18px] text-[10px] font-semibold transition-colors", active ? "text-text" : "text-faint")}
                   >
                     <Icon className="size-[22px]" strokeWidth={active ? 2.4 : 1.9} />
-                    <span>{label}</span>
+                    <span className="max-w-full truncate tracking-[-0.01em]">{short ?? label}</span>
                     <span className={cn("absolute bottom-1 size-1 rounded-full bg-accent transition-opacity duration-200", active ? "opacity-100" : "opacity-0")} />
                   </Link>
                 )}

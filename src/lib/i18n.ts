@@ -2,7 +2,7 @@
 
 const el = {
   app: { name: "Violi", tagline: "Φάε έξυπνα. Προπονήσου. Ανέβα level." },
-  nav: { today: "Σήμερα", log: "Καταγραφή", progress: "Πρόοδος", social: "Social", profile: "Προφίλ", workouts: "Προπονήσεις", settings: "Ρυθμίσεις", notifications: "Ειδοποιήσεις", meals: "Γεύματα", gym: "Γυμναστήριο" },
+  nav: { today: "Σήμερα", log: "Προσθήκη φαγητού", record: "Καταγραφή", gymTab: "Gym", progress: "Πρόοδος", social: "Social", profile: "Προφίλ", workouts: "Προπονήσεις", settings: "Ρυθμίσεις", notifications: "Ειδοποιήσεις", meals: "Γεύματα", gym: "Γυμναστήριο" },
   gym: {
     title: "Γυμναστήριο", subtitle: "Βάρη, routines και ρεκόρ", startEmpty: "Άδεια προπόνηση", routines: "Routines", newRoutine: "Νέα routine",
     editRoutine: "Επεξεργασία routine", routineName: "Όνομα routine", start: "Έναρξη", duplicate: "Αντίγραφο", deleteRoutine: "Διαγραφή routine",
@@ -193,7 +193,7 @@ type DeepString<T> = { [K in keyof T]: T[K] extends string ? string : T[K] exten
 
 const en: DeepString<Dict> = {
   app: { name: "Violi", tagline: "Eat smart. Train. Level up." },
-  nav: { today: "Today", log: "Log", progress: "Progress", social: "Social", profile: "Profile", workouts: "Workouts", settings: "Settings", notifications: "Notifications", meals: "Meals", gym: "Gym" },
+  nav: { today: "Today", log: "Log food", record: "Record", gymTab: "Gym", progress: "Progress", social: "Social", profile: "Profile", workouts: "Workouts", settings: "Settings", notifications: "Notifications", meals: "Meals", gym: "Gym" },
   gym: {
     title: "Gym", subtitle: "Lifts, routines and records", startEmpty: "Start empty workout", routines: "Routines", newRoutine: "New routine",
     editRoutine: "Edit routine", routineName: "Routine name", start: "Start", duplicate: "Duplicate", deleteRoutine: "Delete routine",
