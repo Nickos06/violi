@@ -115,7 +115,7 @@ function AddSheet({ open, onClose, date, weightKg }: { open: boolean; onClose: (
       <div className="space-y-4">
         <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5">
           {WORKOUT_TYPES.map((w) => (
-            <button key={w} onClick={() => setType(w)} className={cn("press flex h-10 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-bold", type === w ? "bg-text text-bg" : "bg-surface-2 text-muted")}>
+            <button key={w} onClick={() => setType(w)} className={cn("press flex h-10 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-bold", type === w ? "varnish" : "bg-surface-2 text-muted")}>
               <WorkoutIcon type={w} className="size-4" /> {t.workouts[w]}
             </button>
           ))}

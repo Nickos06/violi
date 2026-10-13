@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, ChartSpline, Dumbbell, House, Plus, Settings, UserRound, Users, ChefHat } from "lucide-react";
+import { Bell, ChartSpline, Dumbbell, Footprints, House, Plus, Settings, UserRound, Users, ChefHat } from "lucide-react";
 import { cn } from "./ui";
 import { useT } from "./i18n-provider";
 import { ViolinMark, Wordmark } from "./logo";
@@ -12,7 +12,7 @@ export function Nav({ username, unread }: { username: string; unread: number }) 
   const { t } = useT();
   const items = [
     { href: "/today", label: t.nav.today, icon: House },
-    { href: "/progress", label: t.nav.progress, icon: ChartSpline },
+    { href: "/gym", label: t.nav.gym, icon: Dumbbell },
     { href: "/log", label: t.nav.log, icon: Plus, primary: true },
     { href: "/social", label: t.nav.social, icon: Users },
     { href: `/u/${username}`, label: t.nav.profile, icon: UserRound },
@@ -23,7 +23,7 @@ export function Nav({ username, unread }: { username: string; unread: number }) 
     <>
       {/* Phone: floating glass tab bar */}
       <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(env(safe-area-inset-bottom,0px),12px)] md:hidden" aria-label="Main">
-        <ul className="mx-auto grid max-w-md grid-cols-5 items-center rounded-[26px] border border-border bg-surface/85 px-1.5 py-1.5 shadow-[0_8px_30px_-12px_rgb(0_0_0/0.25)] backdrop-blur-2xl backdrop-saturate-150">
+        <ul style={{ ["--edge-fill" as string]: "color-mix(in oklab, var(--surface) 82%, transparent)" }} className="edge mx-auto grid max-w-md grid-cols-5 items-center rounded-[26px] px-1.5 py-1.5 shadow-[0_8px_30px_-12px_rgb(0_0_0/0.25)] backdrop-blur-2xl backdrop-saturate-150">
           {items.map(({ href, label, icon: Icon, primary }) => {
             const active = isActive(href);
             return (
@@ -55,8 +55,9 @@ export function Nav({ username, unread }: { username: string; unread: number }) 
         <ul className="space-y-1">
           {[
             ...items.filter((i) => !i.primary),
+            { href: "/progress", label: t.nav.progress, icon: ChartSpline },
             { href: "/meals", label: t.saved.title, icon: ChefHat },
-            { href: "/workouts", label: t.nav.workouts, icon: Dumbbell },
+            { href: "/workouts", label: t.gym.activities, icon: Footprints },
           ].map(({ href, label, icon: Icon }) => (
             <li key={href}>
               <SideLink href={href} active={isActive(href)} icon={<Icon className="size-[19px]" strokeWidth={isActive(href) ? 2.3 : 1.9} />}>{label}</SideLink>
@@ -97,7 +98,10 @@ export function TopBar({ unread }: { unread: number }) {
   return (
     <div className="flex items-center justify-between pt-[max(env(safe-area-inset-top,0px),12px)] md:hidden">
       <Link href="/today" className="press"><Wordmark size={30} /></Link>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5">
+        <Link href="/progress" className="press grid size-10 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-text" aria-label="Progress">
+          <ChartSpline className="size-[21px]" />
+        </Link>
         <Link href="/meals" className="press grid size-10 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-text" aria-label="Meals">
           <ChefHat className="size-[21px]" />
         </Link>

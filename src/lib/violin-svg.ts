@@ -43,14 +43,18 @@ export const VIOLIN = {
   strings: "M31.2 9.5V49.5M31.73 9.5V49.5M32.27 9.5V49.5M32.8 9.5V49.5",
 };
 
-export type VioliColors = { tile: string; wood: string; ink: string };
+export type VioliColors = { tile: string; wood: string; ink: string; tileGradient?: [string, string]; id?: string };
 
-/** Black tile, white violin — the static app icon. */
-export const ICON_COLORS: VioliColors = { tile: "#0a0a0a", wood: "#fafafa", ink: "#0a0a0a" };
+/** Graphite-to-black metallic tile, white violin — the static app icon. */
+export const ICON_COLORS: VioliColors = { tile: "#0a0a0a", wood: "#fafafa", ink: "#0a0a0a", tileGradient: ["#4a4a4a", "#000000"] };
 
 /** Standalone SVG markup. Colours may be CSS variables when inlined in the page. */
 export function violinIconSvg({ rounded = 16, colors = ICON_COLORS, strings = true }: { rounded?: number; colors?: VioliColors; strings?: boolean } = {}) {
   const v = VIOLIN;
-  const { tile, wood, ink } = colors;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="${rounded}" fill="${tile}"/><g transform="rotate(20 32 32)"><rect x="${v.neck.x}" y="${v.neck.y}" width="${v.neck.w}" height="${v.neck.h}" fill="${wood}"/><path d="${v.pegs}" fill="${wood}"/><path d="${v.pegbox}" fill="${wood}"/><circle cx="${v.scrollCircle.cx}" cy="${v.scrollCircle.cy}" r="${v.scrollCircle.r}" fill="${wood}"/><path d="${v.spiral}" fill="none" stroke="${ink}" stroke-width=".7" stroke-linecap="round"/><path d="${v.body}" fill="${wood}"/><rect x="${v.fingerboard.x}" y="${v.fingerboard.y}" width="${v.fingerboard.w}" height="${v.fingerboard.h}" rx="${v.fingerboard.r}" fill="${ink}"/><path d="${v.fHoles}" fill="none" stroke="${ink}" stroke-width="1.05" stroke-linecap="round"/>${v.fDots.map(([x, y]) => `<circle cx="${x}" cy="${y}" r=".75" fill="${ink}"/>`).join("")}<path d="${v.tailpiece}" fill="${ink}"/><path d="${v.bridge}" stroke="${ink}" stroke-width="1.3" stroke-linecap="round"/>${strings ? `<path d="${v.strings}" stroke="${wood}" stroke-width=".32" stroke-opacity=".9"/>` : ""}</g></svg>`;
+  const { wood, ink, tileGradient, id = "vt" } = colors;
+  const defs = tileGradient
+    ? `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0.6" y2="1"><stop offset="0" stop-color="${tileGradient[0]}"/><stop offset="1" stop-color="${tileGradient[1]}"/></linearGradient></defs>`
+    : "";
+  const tile = tileGradient ? `url(#${id})` : colors.tile;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">${defs}<rect width="64" height="64" rx="${rounded}" fill="${tile}"/><g transform="rotate(20 32 32)"><rect x="${v.neck.x}" y="${v.neck.y}" width="${v.neck.w}" height="${v.neck.h}" fill="${wood}"/><path d="${v.pegs}" fill="${wood}"/><path d="${v.pegbox}" fill="${wood}"/><circle cx="${v.scrollCircle.cx}" cy="${v.scrollCircle.cy}" r="${v.scrollCircle.r}" fill="${wood}"/><path d="${v.spiral}" fill="none" stroke="${ink}" stroke-width=".7" stroke-linecap="round"/><path d="${v.body}" fill="${wood}"/><rect x="${v.fingerboard.x}" y="${v.fingerboard.y}" width="${v.fingerboard.w}" height="${v.fingerboard.h}" rx="${v.fingerboard.r}" fill="${ink}"/><path d="${v.fHoles}" fill="none" stroke="${ink}" stroke-width="1.05" stroke-linecap="round"/>${v.fDots.map(([x, y]) => `<circle cx="${x}" cy="${y}" r=".75" fill="${ink}"/>`).join("")}<path d="${v.tailpiece}" fill="${ink}"/><path d="${v.bridge}" stroke="${ink}" stroke-width="1.3" stroke-linecap="round"/>${strings ? `<path d="${v.strings}" stroke="${wood}" stroke-width=".32" stroke-opacity=".9"/>` : ""}</g></svg>`;
 }

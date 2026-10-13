@@ -12,17 +12,16 @@ import { UserSearch } from "@/components/user-search";
 
 export const metadata = { title: "Social" };
 
-type Tab = "feed" | "discover" | "leaderboard" | "people";
+type Tab = "feed" | "leaderboard" | "people";
 
 export default async function SocialPage({ searchParams }: { searchParams: Promise<{ tab?: string; scope?: string; m?: string; q?: string }> }) {
   const user = await requireUser();
   const { t } = await getT();
   const sp = await searchParams;
-  const tab: Tab = (["feed", "discover", "leaderboard", "people"] as const).includes(sp.tab as Tab) ? (sp.tab as Tab) : "feed";
+  const tab: Tab = (["feed", "leaderboard", "people"] as const).includes(sp.tab as Tab) ? (sp.tab as Tab) : "feed";
 
   const tabs: { k: Tab; l: string }[] = [
     { k: "feed", l: t.social.feed },
-    { k: "discover", l: t.social.discover },
     { k: "leaderboard", l: t.social.leaderboard },
     { k: "people", l: t.social.findFriends },
   ];
@@ -32,7 +31,7 @@ export default async function SocialPage({ searchParams }: { searchParams: Promi
       <h1 className="font-display pb-4 pt-4 text-[34px] font-semibold">{t.social.title}</h1>
       <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
         {tabs.map((x) => (
-          <Link key={x.k} href={`/social?tab=${x.k}`} className={cn("press h-10 shrink-0 rounded-full px-4 text-[13px] font-bold leading-10 transition-colors", tab === x.k ? "bg-text text-bg" : "border border-border bg-surface text-muted hover:text-text")}>
+          <Link key={x.k} href={`/social?tab=${x.k}`} className={cn("press h-10 shrink-0 rounded-full px-4 text-[13px] font-bold leading-10 transition-colors", tab === x.k ? "varnish" : "edge text-muted hover:text-text")}>
             {x.l}
           </Link>
         ))}
@@ -40,7 +39,6 @@ export default async function SocialPage({ searchParams }: { searchParams: Promi
 
       <div className="mt-4">
         {tab === "feed" && <FeedTab userId={user.id} name={user.name} color={user.avatarColor} url={user.avatarUrl} visibility={user.defaultVisibility} mode="following" />}
-        {tab === "discover" && <FeedTab userId={user.id} mode="discover" />}
         {tab === "leaderboard" && <Leaderboard userId={user.id} scope={sp.scope === "global" ? "global" : "friends"} metric={(["week", "xp", "streak", "minutes"] as const).find((m) => m === sp.m) ?? "week"} />}
         {tab === "people" && <People userId={user.id} q={sp.q ?? ""} />}
       </div>
@@ -88,7 +86,7 @@ async function Leaderboard({ userId, scope, metric }: { userId: string; scope: "
       </div>
       <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4">
         {metrics.map((m) => (
-          <Link key={m.k} href={`/social?tab=leaderboard&scope=${scope}&m=${m.k}`} className={cn("press h-9 shrink-0 rounded-full border px-3.5 text-[12.5px] font-bold leading-[34px]", metric === m.k ? "border-accent/50 bg-accent-soft text-accent" : "border-border text-muted")}>
+          <Link key={m.k} href={`/social?tab=leaderboard&scope=${scope}&m=${m.k}`} className={cn("press h-9 shrink-0 rounded-full px-3.5 text-[12.5px] font-bold leading-[34px]", metric === m.k ? "varnish" : "edge text-muted")}>
             {m.l}
           </Link>
         ))}

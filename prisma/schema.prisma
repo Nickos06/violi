@@ -71,6 +71,9 @@ model User {
   customFoods   Food[]
   favorites     FavoriteFood[]
   savedMeals    SavedMeal[]
+  exercises     Exercise[]
+  routines      Routine[]
+  gymWorkouts   GymWorkout[]
 }
 
 model Session {
@@ -364,4 +367,110 @@ model SavedMealItem {
   micros   Json
   position Int     @default(0)
   meal     SavedMeal @relation(fields: [mealId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------------------
+// Strength training (Hevy-style): exercise library, routines, logged workouts.
+// ---------------------------------------------------------------------------
+
+/// kind: weight_reps | bodyweight | weighted_bodyweight | assisted | duration
+model Exercise {
+  id          String   @id @default(cuid())
+  name        String
+  nameEl      String?
+  muscle      String // primary muscle group key (see src/lib/gym.ts)
+  secondary   String   @default("") // comma-separated muscle keys
+  equipment   String // barbell | dumbbell | machine | cable | bodyweight | kettlebell | band | smith | ez_bar | other
+  kind        String   @default("weight_reps")
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  routineItems RoutineExercise[]
+  workoutItems GymExercise[]
+
+  @@index([muscle])
+}
+
+model Routine {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercises RoutineExercise[]
+
+  @@index([userId])
+}
+
+/// sets: [{ type, weight, reps }] — targets for each set.
+model RoutineExercise {
+  id         String   @id @default(cuid())
+  routineId  String
+  exerciseId String
+  position   Int
+  restSec    Int      @default(90)
+  notes      String?
+  superset   Int?
+  sets       Json
+  routine    Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+}
+
+model GymWorkout {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  notes       String?
+  routineId   String?
+  startedAt   DateTime
+  endedAt     DateTime
+  date        String
+  durationSec Int
+  volumeKg    Float    @default(0)
+  setsCount   Int      @default(0)
+  prCount     Int      @default(0)
+  photoUrl    String?
+  activityId  String?
+  postId      String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercises   GymExercise[]
+
+  @@index([userId, startedAt])
+}
+
+model GymExercise {
+  id         String     @id @default(cuid())
+  workoutId  String
+  exerciseId String
+  position   Int
+  notes      String?
+  superset   Int?
+  workout    GymWorkout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  exercise   Exercise   @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  sets       GymSet[]
+}
+
+/// One logged set. userId/exerciseId/date are denormalised for fast history & PR queries.
+model GymSet {
+  id          String      @id @default(cuid())
+  gymExerciseId String
+  userId      String
+  exerciseId  String
+  date        String
+  position    Int
+  type        String      @default("normal") // normal | warmup | failure | drop
+  weightKg    Float?
+  reps        Int?
+  durationSec Int?
+  rpe         Float?
+  e1rm        Float?
+  prs         String      @default("") // comma list: weight, e1rm, volume, reps
+  createdAt   DateTime    @default(now())
+  gymExercise GymExercise @relation(fields: [gymExerciseId], references: [id], onDelete: Cascade)
+
+  @@index([userId, exerciseId, date])
 }

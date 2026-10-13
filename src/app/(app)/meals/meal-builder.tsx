@@ -10,6 +10,7 @@ import { FoodSearch, type PickedFood } from "@/components/food-search";
 import { MacroTiles } from "@/components/meal-section";
 import { SAVED_MEAL_ICON } from "@/components/icons";
 import { Button, Card, cn, Field, fmt, Input, SectionTitle } from "@/components/ui";
+import { ConfirmDelete } from "@/components/confirm-delete";
 import { MEAL_ICONS, type MealIconKey } from "@/lib/meal-icons";
 
 export type BuilderIngredient = { key: string; item: PickedFood; grams: number };
@@ -131,12 +132,7 @@ export function MealBuilder({ initial }: {
 
       <div className="flex gap-2">
         {initial && (
-          <Button
-            variant="danger" size="lg" className="w-14 px-0" aria-label={t.saved.deleteMeal} disabled={pending}
-            onClick={() => start(async () => { await deleteSavedMeal(initial.id); router.push("/meals"); router.refresh(); })}
-          >
-            <Trash2 className="size-5" />
-          </Button>
+          <ConfirmDelete title={t.saved.deleteMeal} onConfirm={async () => { await deleteSavedMeal(initial.id); router.push("/meals"); router.refresh(); }} />
         )}
         <Button size="lg" className="flex-1" disabled={pending || !name.trim() || items.length === 0 || items.some((i) => i.grams <= 0)} onClick={save}>
           {pending ? <Loader2 className="size-5 animate-spin" /> : <><ChefHat className="size-5" /> {t.common.save}</>}

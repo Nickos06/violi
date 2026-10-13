@@ -50,7 +50,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
     <div className="stagger">
       {/* Date + status */}
       <div className="mt-4 flex items-center justify-between gap-2">
-        <div className="flex items-center rounded-full border border-border bg-surface/70 p-1 backdrop-blur">
+        <div className="edge flex items-center rounded-full p-1">
           <Link href={`/today?d=${addDays(date, -1)}`} className="press grid size-8 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-text" aria-label="Previous day">
             <ChevronLeft className="size-[18px]" strokeWidth={2.4} />
           </Link>
@@ -65,11 +65,11 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
           </Link>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className={cn("flex h-9 items-center gap-1 rounded-full px-3 text-[13px] font-bold", streak > 0 ? "bg-text text-bg" : "bg-surface-2 text-faint")}>
+          <span className={cn("flex h-9 items-center gap-1 rounded-full px-3 text-[13px] font-bold", streak > 0 ? "varnish" : "bg-surface-2 text-faint")}>
             <Flame className="size-4" strokeWidth={2.4} fill={streak > 0 ? "currentColor" : "none"} />
             <span className="tabular">{streak}</span>
           </span>
-          <Link href={`/u/${fresh.username}`} className="press flex h-9 items-center rounded-full px-3 text-[13px] font-extrabold" style={{ color: rank.color, background: `color-mix(in oklab, ${rank.color} 14%, transparent)` }}>
+          <Link href={`/u/${fresh.username}`} className="edge-strong press flex h-9 items-center rounded-full px-3 text-[13px] font-extrabold">
             Lv {lv.level}
           </Link>
         </div>
@@ -81,7 +81,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
         <div className="mt-3 flex items-center gap-5">
           <Ring value={totals.kcal} max={budget.kcal} size={156} stroke={13} color={over ? "var(--bad)" : undefined}>
             <div>
-              <div className={cn("font-display tabular text-[40px] font-semibold leading-none", over && "text-bad")}>{fmt(Math.abs(remaining))}</div>
+              <div className={cn("font-display tabular text-[40px] font-semibold leading-none", over ? "text-bad" : "text-chrome")}>{fmt(Math.abs(remaining))}</div>
               <div className="mt-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-muted">{over ? t.today.over : t.today.remaining}</div>
             </div>
           </Ring>

@@ -63,14 +63,14 @@ export function PostCard({ post, onDeleted }: { post: PostView; onDeleted?: () =
             <span className="rounded-md bg-surface-2 px-1.5 py-px text-[10px] font-extrabold text-muted">Lv {post.author.level}</span>
           </div>
           <div className="flex items-center gap-1 text-[12px] text-muted">
-            {timeAgo(post.createdAt, locale)} · <VisIcon className="size-3" />
+            <span suppressHydrationWarning>{timeAgo(post.createdAt, locale)}</span> · <VisIcon className="size-3" />
           </div>
         </div>
         {post.mine && (
           <div className="relative">
             <button onClick={() => setMenu(!menu)} className="grid size-8 place-items-center rounded-full text-muted hover:bg-surface-2" aria-label="More"><MoreHorizontal className="size-4" /></button>
             {menu && (
-              <div className="absolute right-0 top-9 z-10 w-48 rounded-xl border border-border bg-surface p-1 shadow-xl">
+              <div className="absolute right-0 top-9 z-10 w-48 edge rounded-xl p-1 shadow-xl">
                 <button onClick={() => start(async () => { await deletePost(post.id); setDeleted(true); onDeleted?.(); })} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[13px] font-medium text-bad hover:bg-surface-2">
                   <Trash2 className="size-4" /> {t.social.deletePost}
                 </button>
@@ -87,8 +87,8 @@ export function PostCard({ post, onDeleted }: { post: PostView; onDeleted?: () =
             {t.social.ateMeal} <span className="font-bold text-text">{t.meals[(p.meal as keyof typeof t.meals) ?? "lunch"]}</span>
           </p>
         )}
-        {post.type === "workout" && (
-          <p className="flex items-center gap-1.5 text-[13px] font-semibold text-muted"><WorkoutIcon type={p.type as string} className="size-3.5" /> {t.social.didWorkout}</p>
+        {(post.type === "workout" || post.type === "strength") && (
+          <p className="flex items-center gap-1.5 text-[13px] font-semibold text-muted"><WorkoutIcon type={post.type === "strength" ? "strength" : (p.type as string)} className="size-3.5" /> {t.social.didWorkout}</p>
         )}
         {post.type === "achievement" && p.kind === "level" && (
           <div className="relative flex items-center gap-4 overflow-hidden rounded-2xl bg-accent-soft p-4">
@@ -132,6 +132,30 @@ export function PostCard({ post, onDeleted }: { post: PostView; onDeleted?: () =
         </div>
       )}
 
+      {post.type === "strength" && (
+        <div className="mx-4 mt-3 rounded-2xl bg-surface-2 p-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="truncate text-[15px] font-bold">{p.name as string}</div>
+            {(p.prs as number) > 0 && <span className="varnish flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold"><Trophy className="size-3" /> {p.prs as number} PR</span>}
+          </div>
+          <div className="mt-2 grid grid-cols-3 text-center">
+            <div><div className="tabular font-bold">{formatDuration(p.durationSec as number)}</div><div className="text-[11px] text-muted">{t.gym.duration}</div></div>
+            <div><div className="tabular font-bold">{fmt(p.volumeKg as number)} kg</div><div className="text-[11px] text-muted">{t.gym.volume}</div></div>
+            <div><div className="tabular font-bold">{p.sets as number}</div><div className="text-[11px] text-muted">{t.gym.sets}</div></div>
+          </div>
+          {Array.isArray(p.exercises) && (
+            <ul className="mt-2.5 space-y-1 border-t border-border pt-2.5 text-[13px]">
+              {(p.exercises as { name: string; sets: number; best: string; pr: boolean }[]).map((e, i) => (
+                <li key={i} className="flex items-center justify-between gap-3">
+                  <span className="truncate font-semibold">{e.sets} × {e.name}</span>
+                  <span className="tabular flex shrink-0 items-center gap-1 text-[12px] font-bold text-muted">{e.pr && <Trophy className="size-3 text-text" />}{e.best}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
       {post.type === "workout" && (
         <div className="mx-4 mt-3 rounded-2xl bg-surface-2 p-3">
           <div className="text-[15px] font-bold">{p.name as string}</div>
@@ -163,7 +187,7 @@ export function PostCard({ post, onDeleted }: { post: PostView; onDeleted?: () =
               <div className="min-w-0 flex-1 rounded-2xl bg-surface-2 px-3 py-2">
                 <div className="flex items-center justify-between gap-2">
                   <Link href={`/u/${c.user.username}`} className="text-[13px] font-semibold">{c.user.name}</Link>
-                  <span className="text-[11px] text-faint">{timeAgo(c.createdAt, locale)}</span>
+                  <span className="text-[11px] text-faint" suppressHydrationWarning>{timeAgo(c.createdAt, locale)}</span>
                 </div>
                 <p className="whitespace-pre-wrap text-[14px]">{c.text}</p>
               </div>

@@ -7,6 +7,7 @@ import { FOODS } from "./foods";
 import { computeTargets, initialExpenditure } from "../src/lib/nutrition";
 import { scaleMicros } from "../src/lib/nutrients";
 import { addDays, today, toDay, weekStart } from "../src/lib/dates";
+import { disconnectGymDb, seedExercises, seedGymDemo } from "./seed-gym";
 
 const db = new PrismaClient();
 const r1 = (n: number) => Math.round(n * 10) / 10;
@@ -164,9 +165,13 @@ async function seedDemo() {
 
 async function main() {
   await seedFoods();
-  if (process.env.SEED_DEMO !== "0") await seedDemo();
+  await seedExercises();
+  if (process.env.SEED_DEMO !== "0") {
+    await seedDemo();
+    await seedGymDemo();
+  }
 }
 
 main()
   .catch((e) => { console.error(e); process.exit(1); })
-  .finally(() => db.$disconnect());
+  .finally(async () => { await db.$disconnect(); await disconnectGymDb(); });

@@ -28,7 +28,7 @@ export default async function Landing() {
 
       <section className="grid min-h-[calc(100svh-90px)] items-center gap-14 py-10 md:grid-cols-[1.1fr_1fr] md:py-16">
         <div className="stagger">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/70 px-3 py-1.5 text-[12px] font-bold text-muted backdrop-blur">
+          <span className="inline-flex items-center gap-2 edge rounded-full px-3 py-1.5 text-[12px] font-bold text-muted">
             <span className="size-1.5 rounded-full bg-accent" /> Garmin · Strava · AI
           </span>
           <h1 className="font-display mt-6 text-[52px] font-semibold leading-[0.98] md:text-[76px]">

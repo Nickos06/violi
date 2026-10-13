@@ -108,8 +108,8 @@ export function Ring({
       <svg width={size} height={size} className="-rotate-90">
         <defs>
           <linearGradient id={`g${id}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="var(--accent-2)" />
-            <stop offset="1" stopColor="var(--accent)" />
+            <stop offset="0" stopColor="var(--ring-b)" />
+            <stop offset="1" stopColor="var(--ring-a)" />
           </linearGradient>
         </defs>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={track} strokeWidth={stroke} />
@@ -130,12 +130,12 @@ export function Avatar({ name, color, url, size = 40, className }: { name: strin
   const initials = name.split(/\s+/).map((p) => p[0]).join("").slice(0, 2).toUpperCase();
   if (url) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={url} alt={name} width={size} height={size} className={cn("shrink-0 rounded-full object-cover", className)} style={{ width: size, height: size }} />;
+    return <img src={url} alt={name} width={size} height={size} className={cn("shrink-0 rounded-full object-cover ring-1 ring-border-strong", className)} style={{ width: size, height: size }} />;
   }
   return (
     <div
-      className={cn("grid shrink-0 place-items-center rounded-full bg-surface-3 font-bold text-text", className)}
-      style={{ width: size, height: size, fontSize: size * 0.36 }}
+      className={cn("edge-strong grid shrink-0 place-items-center rounded-full font-bold text-text", className)}
+      style={{ width: size, height: size, fontSize: size * 0.36, ["--edge-fill" as string]: "var(--surface-2)" }}
     >
       {initials}
     </div>

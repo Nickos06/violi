@@ -58,14 +58,14 @@ export function LogClient({ initialMeal, date, ai, initialTab, savedMeals }: { i
       </div>
 
       {/* Meal slot */}
-      <div className="mt-4 flex gap-1 rounded-2xl border border-border bg-surface/70 p-1">
+      <div className="edge mt-4 flex gap-1 rounded-2xl p-1">
         {(["breakfast", "lunch", "dinner", "snack"] as const).map((m) => {
           const I = MEAL_SLOT_ICON[m];
           return (
             <button
               key={m}
               onClick={() => setMeal(m)}
-              className={cn("press flex h-10 flex-auto items-center justify-center gap-1.5 rounded-xl px-2.5 text-[12.5px] font-bold transition-colors", meal === m ? "bg-text text-bg" : "text-muted hover:text-text")}
+              className={cn("press flex h-10 flex-auto items-center justify-center gap-1.5 rounded-xl px-2.5 text-[12.5px] font-bold transition-colors", meal === m ? "varnish" : "text-muted hover:text-text")}
             >
               <I className="size-3.5 shrink-0 max-[420px]:hidden" strokeWidth={2.4} /> {t.meals[m]}
             </button>
@@ -80,8 +80,8 @@ export function LogClient({ initialMeal, date, ai, initialTab, savedMeals }: { i
             key={k}
             onClick={() => setTab(k)}
             className={cn(
-              "press flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-4 text-[13px] font-bold transition-colors",
-              tab === k ? "border-accent/50 bg-accent-soft text-accent" : "border-border bg-surface text-muted hover:text-text",
+              "press flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 text-[13px] font-bold transition-colors",
+              tab === k ? "varnish border-transparent" : "edge text-muted hover:text-text",
             )}
           >
             <Icon className="size-4" strokeWidth={2.3} />
@@ -176,7 +176,7 @@ function SavedMealSheet({ meal, slot, date, onClose, onLogged }: { meal: SavedMe
             </div>
             <div className="mt-2.5 flex flex-wrap gap-2">
               {chips.map((c) => (
-                <button key={c} onClick={() => setGrams(String(c))} className={cn("press h-9 rounded-full px-3.5 text-[13px] font-bold", Number(grams) === c ? "bg-text text-bg" : "bg-surface-2 text-muted")}>
+                <button key={c} onClick={() => setGrams(String(c))} className={cn("press h-9 rounded-full px-3.5 text-[13px] font-bold", Number(grams) === c ? "varnish" : "bg-surface-2 text-muted")}>
                   {c === Math.round(meal.totalGrams) ? `${t.saved.whole} · ${c} g` : c === Math.round(meal.portionG) ? `${t.saved.portionOf} · ${c} g` : `${c} g`}
                 </button>
               ))}
@@ -223,7 +223,7 @@ function FoodSheet({ item, meal, date, source, onClose, onLogged }: { item: Pick
         </div>
         <div className="flex flex-wrap gap-2">
           {presets.map((p) => (
-            <button key={p} onClick={() => setGrams(String(p))} className={cn("press h-9 rounded-full px-3.5 text-[13px] font-bold", Number(grams) === p ? "bg-text text-bg" : "bg-surface-2 text-muted")}>
+            <button key={p} onClick={() => setGrams(String(p))} className={cn("press h-9 rounded-full px-3.5 text-[13px] font-bold", Number(grams) === p ? "varnish" : "bg-surface-2 text-muted")}>
               {p === Math.round(item.servingG) && item.servingLabel ? `${item.servingLabel} · ${p} g` : `${p} g`}
             </button>
           ))}

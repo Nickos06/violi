@@ -4,8 +4,9 @@
 
 /*
  * Violi design tokens — monochrome.
- * Pure black & white with a neutral grey ramp. Colour is reserved for one job only: errors / going
- * over a limit (--bad). Macros are told apart by tone (ink → mid-grey → light grey), not hue.
+ * Pure black & white with a neutral grey ramp, finished with brushed-silver edges and chrome fills.
+ * Colour is reserved for one job only: errors / going over a limit (--bad). Macros are told apart by
+ * tone (ink → mid-grey → light grey), not hue.
  */
 :root {
   --bg: #ffffff;
@@ -29,8 +30,17 @@
   --bad: #e5484d;
   --warn: #6b6b6b;
   --ring-track: #efefef;
-  --card-shadow: 0 0 0 transparent;
-  --card-highlight: 0 0 0 transparent;
+  --ring-a: #0a0a0a;
+  --ring-b: #9a9a9a;
+  /* Brushed-silver hairlines: a diagonal sheen that catches the light at two points. */
+  --edge: linear-gradient(150deg, #f0f0f0 0%, #c9c9c9 24%, #f7f7f7 50%, #bfbfbf 76%, #ededed 100%);
+  --edge-strong: linear-gradient(150deg, #dcdcdc 0%, #9c9c9c 28%, #ececec 52%, #8f8f8f 78%, #d6d6d6 100%);
+  --chrome-fill: linear-gradient(180deg, #3d3d3d 0%, #171717 52%, #040404 100%);
+  --chrome-text: linear-gradient(180deg, #2e2e2e 0%, #000000 55%, #4a4a4a 100%);
+  --logo-a: #4a4a4a;
+  --logo-b: #000000;
+  --card-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -18px rgb(0 0 0 / 0.25);
+  --card-highlight: inset 0 1px 0 rgb(255 255 255 / 0.9);
   color-scheme: light;
 }
 
@@ -56,8 +66,16 @@
   --bad: #ff5f5f;
   --warn: #8f8f8f;
   --ring-track: #1a1a1a;
-  --card-shadow: 0 0 0 transparent;
-  --card-highlight: 0 0 0 transparent;
+  --ring-a: #ffffff;
+  --ring-b: #6f6f6f;
+  --edge: linear-gradient(150deg, #545454 0%, #232323 24%, #161616 50%, #2b2b2b 76%, #626262 100%);
+  --edge-strong: linear-gradient(150deg, #9a9a9a 0%, #3d3d3d 28%, #262626 52%, #4d4d4d 78%, #a8a8a8 100%);
+  --chrome-fill: linear-gradient(180deg, #ffffff 0%, #e8e8e8 38%, #b4b4b4 100%);
+  --chrome-text: linear-gradient(180deg, #ffffff 25%, #9b9b9b 100%);
+  --logo-a: #ffffff;
+  --logo-b: #9a9a9a;
+  --card-shadow: 0 10px 30px -20px rgb(0 0 0 / 0.9);
+  --card-highlight: inset 0 1px 0 rgb(255 255 255 / 0.06);
   color-scheme: dark;
 }
 
@@ -148,11 +166,28 @@ button,
   letter-spacing: -0.04em;
 }
 
+/* Cards: surface fill with a brushed-silver 1px edge (gradient on the border box). */
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   border-radius: var(--radius-card);
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    var(--edge) border-box;
   box-shadow: var(--card-highlight), var(--card-shadow);
+}
+
+/* Same silver edge for any element; set --edge-fill to the element's own background. */
+.edge {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--edge-fill, var(--surface)), var(--edge-fill, var(--surface))) padding-box,
+    var(--edge) border-box;
+}
+.edge-strong {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--edge-fill, var(--surface-2)), var(--edge-fill, var(--surface-2))) padding-box,
+    var(--edge-strong) border-box;
 }
 
 /* Pressable: instant feedback on pointer-down, snappy release. */
@@ -163,14 +198,19 @@ button,
   transform: scale(0.97);
 }
 
-/* Primary fill: ink on paper, paper on ink. */
+/* Primary fill: polished chrome — graphite on the light theme, bright silver on the dark one. */
 .varnish {
-  background: var(--text);
-  color: var(--bg);
+  background: var(--chrome-fill);
+  color: var(--accent-fg);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35), inset 0 -1px 0 rgb(0 0 0 / 0.18);
 }
 
-.text-varnish {
-  color: var(--text);
+.text-varnish,
+.text-chrome {
+  background: var(--chrome-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .no-scrollbar::-webkit-scrollbar {

@@ -94,8 +94,8 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
               return (
                 <div key={k} title={desc} className={cn("card flex flex-col items-center gap-2 px-1.5 py-3.5 text-center", !has && "opacity-40")}>
                   <span
-                    className="grid size-11 place-items-center rounded-full"
-                    style={has ? { color: tone, background: `color-mix(in oklab, ${tone} 16%, transparent)`, boxShadow: `inset 0 0 0 1.5px color-mix(in oklab, ${tone} 45%, transparent)` } : { color: "var(--faint)", background: "var(--surface-2)" }}
+                    className={cn("grid size-11 place-items-center rounded-full", has && "edge-strong")}
+                    style={has ? { color: tone, ["--edge-fill" as string]: "var(--surface-2)" } : { color: "var(--faint)", background: "var(--surface-2)" }}
                   >
                     {has ? <Icon className="size-5" strokeWidth={2.2} /> : <Lock className="size-4" />}
                   </span>
