@@ -1,0 +1,328 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  username     String   @unique
+  name         String
+  passwordHash String
+  avatarColor  String   @default("#8B5CF6")
+  avatarUrl    String?
+  bio          String?
+  locale       String   @default("el")
+  theme        String   @default("dark")
+  createdAt    DateTime @default(now())
+
+  // Body & goal profile
+  onboarded          Boolean   @default(false)
+  sex                String? // "male" | "female"
+  birthYear          Int?
+  heightCm           Float?
+  activityLevel      String? // sedentary | light | moderate | active | athlete
+  goalType           String? // lose | maintain | gain
+  goalRatePct        Float     @default(0.5) // % of body weight per week
+  targetWeightKg     Float?
+  dietType           String    @default("balanced") // balanced | high_protein | low_carb | keto | plant
+  exerciseCreditPct  Int       @default(75) // how much of tracked exercise is added back to the budget
+  expenditure        Float? // current base (non-exercise) daily expenditure estimate, kcal
+  expenditureAt      DateTime?
+  targetKcal         Float?
+  targetProtein      Float?
+  targetCarbs        Float?
+  targetFat          Float?
+  checkInWeekday     Int       @default(1) // 0=Sunday … 6=Saturday
+
+  // Gamification
+  xp            Int     @default(0)
+  streak        Int     @default(0)
+  longestStreak Int     @default(0)
+  lastLogDate   String?
+
+  // Privacy
+  profilePublic     Boolean @default(true)
+  shareMeals        Boolean @default(true)
+  shareWorkouts     Boolean @default(true)
+  shareWeight       Boolean @default(false)
+  defaultVisibility String  @default("friends") // public | friends | private
+
+  sessions      Session[]
+  foodLogs      FoodLog[]
+  weights       WeightEntry[]
+  activities    Activity[]
+  dailies       DailyActivity[]
+  integrations  Integration[]
+  checkIns      CheckIn[]
+  xpEvents      XpEvent[]
+  achievements  Achievement[]
+  posts         Post[]
+  reactions     Reaction[]
+  comments      Comment[]
+  following     Follow[]        @relation("follower")
+  followers     Follow[]        @relation("following")
+  notifications Notification[]  @relation("recipient")
+  actedNotifs   Notification[]  @relation("actor")
+  customFoods   Food[]
+  favorites     FavoriteFood[]
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Nutrition values are per 100 g. `micros` holds vitamins/minerals keyed by nutrient id (see src/lib/nutrients.ts).
+model Food {
+  id           String   @id @default(cuid())
+  name         String
+  nameEl       String?
+  brand        String?
+  barcode      String?  @unique
+  source       String   @default("seed") // seed | off | usda | custom | ai
+  externalId   String?
+  servingG     Float    @default(100)
+  servingLabel String?
+  kcal         Float
+  protein      Float
+  carbs        Float
+  fat          Float
+  fiber        Float    @default(0)
+  sugar        Float    @default(0)
+  micros       Json
+  createdById  String?
+  createdBy    User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+
+  logs      FoodLog[]
+  favorites FavoriteFood[]
+
+  @@unique([source, externalId])
+  @@index([name])
+}
+
+model FavoriteFood {
+  userId String
+  foodId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  food   Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
+
+  @@id([userId, foodId])
+}
+
+/// A logged food entry. Nutrition values are absolute for the logged amount.
+model FoodLog {
+  id        String   @id @default(cuid())
+  userId    String
+  date      String // YYYY-MM-DD in the user's local day
+  meal      String // breakfast | lunch | dinner | snack
+  foodId    String?
+  name      String
+  grams     Float
+  kcal      Float
+  protein   Float
+  carbs     Float
+  fat       Float
+  fiber     Float    @default(0)
+  sugar     Float    @default(0)
+  micros    Json
+  source    String   @default("search") // search | barcode | ai_photo | ai_text | quick | custom
+  photoUrl  String?
+  createdAt DateTime @default(now())
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  food Food? @relation(fields: [foodId], references: [id], onDelete: SetNull)
+
+  @@index([userId, date])
+}
+
+model WeightEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  date      String
+  weightKg  Float
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+/// A workout. Activities with source "strava" are never shown to other users (Strava API Agreement).
+model Activity {
+  id          String   @id @default(cuid())
+  userId      String
+  source      String // manual | garmin | strava | fit
+  externalId  String?
+  type        String // run | ride | swim | walk | strength | hiit | yoga | other …
+  name        String
+  startAt     DateTime
+  date        String
+  durationSec Int
+  distanceM   Float?
+  kcal        Float
+  avgHr       Int?
+  elevationM  Float?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([source, externalId])
+  @@index([userId, date])
+}
+
+/// Daily wearable summary (Garmin dailies): steps & active calories outside logged workouts.
+model DailyActivity {
+  id        String   @id @default(cuid())
+  userId    String
+  date      String
+  source    String
+  steps     Int      @default(0)
+  activeKcal Float   @default(0)
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date, source])
+}
+
+model Integration {
+  id             String    @id @default(cuid())
+  userId         String
+  provider       String // garmin | strava
+  externalUserId String
+  accessToken    String
+  refreshToken   String?
+  expiresAt      DateTime?
+  lastSyncAt     DateTime?
+  createdAt      DateTime  @default(now())
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@unique([provider, externalUserId])
+}
+
+model OAuthState {
+  state        String   @id
+  userId       String
+  provider     String
+  codeVerifier String?
+  createdAt    DateTime @default(now())
+}
+
+model CheckIn {
+  id          String   @id @default(cuid())
+  userId      String
+  date        String
+  expenditure Float
+  prevExpenditure Float
+  targetKcal  Float
+  protein     Float
+  carbs       Float
+  fat         Float
+  trendWeight Float?
+  weeklyChangeKg Float?
+  avgIntake   Float?
+  daysLogged  Int      @default(0)
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+}
+
+model XpEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  amount    Int
+  refId     String
+  date      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, refId])
+  @@index([userId, date])
+}
+
+model Achievement {
+  userId     String
+  key        String
+  unlockedAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, key])
+}
+
+model Follow {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@index([followingId])
+}
+
+model Post {
+  id         String   @id @default(cuid())
+  userId     String
+  type       String // meal | workout | progress | achievement | text
+  text       String?
+  photoUrl   String?
+  visibility String   @default("friends") // public | friends | private
+  refId      String?
+  payload    Json
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reactions  Reaction[]
+  comments   Comment[]
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+}
+
+model Reaction {
+  postId    String
+  userId    String
+  kind      String // W | L
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([postId, userId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  text      String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  actorId   String
+  type      String // W | L | comment | follow | level
+  postId    String?
+  text      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation("recipient", fields: [userId], references: [id], onDelete: Cascade)
+  actor     User     @relation("actor", fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
