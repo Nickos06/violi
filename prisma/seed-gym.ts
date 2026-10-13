@@ -2,6 +2,8 @@
 // four weeks of strength history for the demo account. Safe to run on an existing database.
 import { PrismaClient } from "@prisma/client";
 import { EXERCISES } from "./exercises";
+import { EXERCISE_MEDIA } from "./exercise-media";
+import { GUIDE_EL } from "./exercise-guide-el";
 import { addDays, today } from "../src/lib/dates";
 import { e1rm } from "../src/lib/gym";
 
@@ -16,7 +18,18 @@ export async function seedExercises() {
       data: missing.map(([name, nameEl, muscle, secondary, equipment, kind]) => ({ name, nameEl, muscle, secondary, equipment, kind })),
     });
   }
-  console.log(`✓ exercises: ${EXERCISES.length} (${missing.length} added)`);
+  // Attach demo media + execution guides (kept up to date on every run).
+  let withMedia = 0;
+  for (const [name] of EXERCISES) {
+    const m = EXERCISE_MEDIA[name];
+    const el = GUIDE_EL[name];
+    if (m?.media) withMedia++;
+    await db.exercise.updateMany({
+      where: { name, createdById: null },
+      data: { media: m?.media ?? null, guide: { el: el ?? { steps: [], tips: [] }, en: { steps: m?.stepsEn ?? [], tips: [] } } },
+    });
+  }
+  console.log(`✓ exercises: ${EXERCISES.length} (${missing.length} added, ${withMedia} with demo media)`);
 }
 
 export async function seedGymDemo() {

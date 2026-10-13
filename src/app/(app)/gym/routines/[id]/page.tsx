@@ -17,7 +17,7 @@ export default async function EditRoutinePage({ params }: { params: Promise<{ id
     <div className="animate-rise">
       <PageHeader back="/gym" title={t.gym.editRoutine} />
       <RoutineEditor
-        library={await exerciseLibrary(user.id)}
+        library={await exerciseLibrary(user.id, user.locale)}
         initial={{
           id: r.id, name: r.name, notes: r.notes ?? "",
           exercises: r.exercises.map((e) => ({ exerciseId: e.exerciseId, restSec: e.restSec, notes: e.notes ?? "", sets: (e.sets as { type: string; weight: number | null; reps: number | null }[]) ?? [] })),

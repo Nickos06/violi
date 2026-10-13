@@ -382,6 +382,8 @@ model Exercise {
   secondary   String   @default("") // comma-separated muscle keys
   equipment   String // barbell | dumbbell | machine | cable | bodyweight | kettlebell | band | smith | ez_bar | other
   kind        String   @default("weight_reps")
+  media       String? // free-exercise-db id → start/end photos used for the demo animation
+  guide       Json? // { el: { steps, tips }, en: { steps, tips } }
   createdById String?
   createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())

@@ -9,7 +9,7 @@ export default async function LiveWorkoutPage({ searchParams }: { searchParams: 
   const user = await requireUser();
   const { routine: routineId } = await searchParams;
   const [library, routine] = await Promise.all([
-    exerciseLibrary(user.id),
+    exerciseLibrary(user.id, user.locale),
     routineId ? db.routine.findFirst({ where: { id: routineId, userId: user.id }, include: { exercises: { orderBy: { position: "asc" } } } }) : null,
   ]);
   const seed: RoutineSeed | null = routine

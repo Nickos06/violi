@@ -9,6 +9,7 @@ import { Sheet } from "@/components/sheet";
 import { Button, cn, Field, Input, Textarea } from "@/components/ui";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { ExercisePicker, exerciseName, type ExerciseLite } from "@/components/gym/exercise-picker";
+import { ExerciseInfoSheet, ExerciseThumb } from "@/components/gym/exercise-media";
 import { fmtClock, MUSCLE_LABEL, REST_OPTIONS, SET_TYPES, type Muscle, type SetType } from "@/lib/gym";
 import { uid } from "@/lib/live-workout";
 
@@ -33,6 +34,7 @@ export function RoutineEditor({ library, initial }: { library: ExerciseLite[]; i
   );
   const [picking, setPicking] = useState(false);
   const [restFor, setRestFor] = useState<string | null>(null);
+  const [info, setInfo] = useState<ExerciseLite | null>(null);
   const [pending, start] = useTransition();
   const L = locale === "el" ? "el" : "en";
 
@@ -65,11 +67,14 @@ export function RoutineEditor({ library, initial }: { library: ExerciseLite[]; i
         let no = 0;
         return (
           <section key={ex.key} className="card overflow-hidden">
-            <div className="flex items-start gap-2 px-4 pb-2 pt-4">
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[16px] font-extrabold">{meta ? exerciseName(meta, locale) : "…"}</div>
-                <div className="text-[12px] font-semibold text-faint">{meta ? MUSCLE_LABEL[meta.muscle as Muscle]?.[L] : ""}</div>
-              </div>
+            <div className="flex items-center gap-2 px-4 pb-2 pt-4">
+              <button onClick={() => meta && setInfo(meta)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                <ExerciseThumb media={meta?.media} name={meta ? exerciseName(meta, locale) : "?"} size={44} />
+                <span className="min-w-0">
+                  <span className="block truncate text-[16px] font-extrabold">{meta ? exerciseName(meta, locale) : "…"}</span>
+                  <span className="block text-[12px] font-semibold text-faint">{meta ? MUSCLE_LABEL[meta.muscle as Muscle]?.[L] : ""}</span>
+                </span>
+              </button>
               <button onClick={() => setRestFor(ex.key)} className="press edge flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-bold">
                 <Timer className="size-3.5" /> {ex.restSec ? fmtClock(ex.restSec) : t.gym.restOff}
               </button>
@@ -140,6 +145,8 @@ export function RoutineEditor({ library, initial }: { library: ExerciseLite[]; i
         onCreated={(e) => setExtra((x) => [...x, e])}
         onPick={(ids) => setItems((xs) => [...xs, ...ids.map((id) => ({ key: uid(), exerciseId: id, restSec: 90, notes: "", sets: [tset(), tset(), tset()] }))])}
       />
+
+      <ExerciseInfoSheet exercise={info} onClose={() => setInfo(null)} />
 
       <Sheet open={!!restFor} onClose={() => setRestFor(null)} title={t.gym.restTimer}>
         <div className="grid grid-cols-4 gap-2">

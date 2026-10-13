@@ -11,7 +11,7 @@ export default async function ExercisesPage() {
   return (
     <div className="animate-rise">
       <PageHeader back="/gym" title={t.gym.exercises} />
-      <ExerciseBrowser library={await exerciseLibrary(user.id)} />
+      <ExerciseBrowser library={await exerciseLibrary(user.id, user.locale)} />
     </div>
   );
 }

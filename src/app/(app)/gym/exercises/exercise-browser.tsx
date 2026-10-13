@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 import { useT } from "@/components/i18n-provider";
 import { cn, Input } from "@/components/ui";
 import { exerciseName, type ExerciseLite } from "@/components/gym/exercise-picker";
+import { ExerciseThumb } from "@/components/gym/exercise-media";
 import { EQUIPMENT_LABEL, MUSCLE_LABEL, MUSCLES, type Muscle } from "@/lib/gym";
 
 const strip = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -37,7 +38,7 @@ export function ExerciseBrowser({ library }: { library: ExerciseLite[] }) {
       <div className="card mt-4 divide-y divide-border overflow-hidden">
         {list.map((e) => (
           <Link key={e.id} href={`/gym/exercises/${e.id}`} className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-2/60">
-            <span className="edge-strong grid size-10 shrink-0 place-items-center rounded-xl text-[13px] font-black text-muted">{exerciseName(e, locale).slice(0, 1)}</span>
+            <ExerciseThumb media={e.media} name={exerciseName(e, locale)} size={52} />
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[14.5px] font-semibold">{exerciseName(e, locale)}</span>
               <span className="block truncate text-[12px] font-semibold text-faint">

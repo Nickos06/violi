@@ -316,6 +316,23 @@ dialog.sheet::backdrop {
   }
 }
 
+/* Exercise demo: hold each position, then cross-fade — reads as the movement itself. */
+@keyframes demo-swap {
+  0%, 38% { opacity: 0; }
+  50%, 88% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.demo-frame {
+  animation: demo-swap 2.6s var(--ease-in-out) infinite;
+}
+@keyframes demo-dot {
+  0%, 38% { opacity: 1; }
+  50%, 88% { opacity: 0.2; }
+  100% { opacity: 1; }
+}
+.demo-dot-a { animation: demo-dot 2.6s var(--ease-in-out) infinite; }
+.demo-dot-b { animation: demo-dot 2.6s var(--ease-in-out) infinite reverse; }
+
 @media (prefers-reduced-motion: reduce) {
   .animate-rise,
   .stagger > *,

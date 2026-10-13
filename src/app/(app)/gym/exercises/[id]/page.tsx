@@ -6,6 +6,8 @@ import { EQUIPMENT_LABEL, fmtKg, fmtSet, MUSCLE_LABEL, setVolume, type Muscle } 
 import { exerciseHistory } from "@/lib/gym-server";
 import { Card, Empty, fmt, PageHeader, SectionTitle } from "@/components/ui";
 import { ProgressChart } from "./progress-chart";
+import { toLite } from "@/lib/gym-library";
+import { ExerciseDemo, ExerciseGuideView, MuscleChips } from "@/components/gym/exercise-media";
 
 export const metadata = { title: "Exercise" };
 
@@ -17,6 +19,7 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
   const ex = await db.exercise.findFirst({ where: { id, OR: [{ createdById: null }, { createdById: user.id }] } });
   if (!ex) notFound();
   const sessions = await exerciseHistory(user.id, ex.id);
+  const lite = toLite(ex, L);
 
   // Per-session metrics (oldest → newest) and all-time records.
   const points = [...sessions].reverse().map((s) => {
@@ -41,8 +44,17 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
       <PageHeader
         back="/gym/exercises"
         title={L === "el" && ex.nameEl ? ex.nameEl : ex.name}
-        subtitle={`${MUSCLE_LABEL[ex.muscle as Muscle]?.[L] ?? ex.muscle} · ${EQUIPMENT_LABEL[ex.equipment as keyof typeof EQUIPMENT_LABEL]?.[L] ?? ex.equipment}`}
       />
+      <ExerciseDemo media={lite.media} />
+      <div className="mt-4"><MuscleChips exercise={lite} /></div>
+      {lite.guide && (
+        <>
+          <SectionTitle>{L === "el" ? "Εκτέλεση" : "How to"}</SectionTitle>
+          <Card className="p-5"><ExerciseGuideView guide={lite.guide} /></Card>
+        </>
+      )}
+
+      <SectionTitle>{t.gym.history}</SectionTitle>
       {sessions.length === 0 ? (
         <Card><Empty icon={<Trophy className="size-6" />} title={t.gym.noHistory} /></Card>
       ) : (
@@ -68,7 +80,7 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
             ))}
           </Card>
 
-          <SectionTitle>{t.gym.history} · {sessions.length} {t.gym.sessions.toLowerCase()}</SectionTitle>
+          <SectionTitle>{sessions.length} {t.gym.sessions.toLowerCase()}</SectionTitle>
           <div className="space-y-3">
             {sessions.map((s) => (
               <Card key={s.id} className="p-4">

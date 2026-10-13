@@ -1,14 +1,18 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { Check, Loader2, Plus, Search } from "lucide-react";
+import { Check, Info, Loader2, Plus, Search } from "lucide-react";
 import { createExercise } from "@/app/actions/gym";
 import { EQUIPMENT, EQUIPMENT_LABEL, KINDS, MUSCLE_LABEL, MUSCLES, type Muscle } from "@/lib/gym";
 import { useT } from "../i18n-provider";
 import { Sheet } from "../sheet";
 import { Button, cn, Field, Input, Select } from "../ui";
+import { ExerciseInfoSheet, ExerciseThumb } from "./exercise-media";
 
-export type ExerciseLite = { id: string; name: string; nameEl: string | null; muscle: string; secondary: string; equipment: string; kind: string; custom?: boolean };
+export type ExerciseLite = {
+  id: string; name: string; nameEl: string | null; muscle: string; secondary: string; equipment: string; kind: string; custom?: boolean;
+  media?: string | null; guide?: { steps: string[]; tips: string[] } | null;
+};
 
 const strip = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
@@ -25,6 +29,7 @@ export function ExercisePicker({ open, onClose, library, onPick, multi = true, o
   const [muscle, setMuscle] = useState<Muscle | "all">("all");
   const [picked, setPicked] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
+  const [info, setInfo] = useState<ExerciseLite | null>(null);
 
   const list = useMemo(() => {
     const n = strip(q.trim());
@@ -67,10 +72,11 @@ export function ExercisePicker({ open, onClose, library, onPick, multi = true, o
           {list.map((e) => {
             const on = picked.includes(e.id);
             return (
-              <li key={e.id}>
-                <button onClick={() => toggle(e.id)} className="flex w-full items-center gap-3 py-3 text-left">
-                  <span className={cn("grid size-10 shrink-0 place-items-center rounded-xl text-[13px] font-black", on ? "varnish" : "edge-strong text-muted")}>
-                    {on ? <Check className="size-4" strokeWidth={3} /> : exerciseName(e, locale).slice(0, 1)}
+              <li key={e.id} className="flex items-center gap-1">
+                <button onClick={() => toggle(e.id)} className="flex min-w-0 flex-1 items-center gap-3 py-2.5 text-left">
+                  <span className="relative shrink-0">
+                    <ExerciseThumb media={e.media} name={exerciseName(e, locale)} size={48} />
+                    {on && <span className="varnish absolute inset-0 grid place-items-center rounded-xl"><Check className="size-5" strokeWidth={3} /></span>}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[14.5px] font-semibold">{exerciseName(e, locale)}</span>
@@ -79,6 +85,9 @@ export function ExercisePicker({ open, onClose, library, onPick, multi = true, o
                       {e.custom ? ` · ${t.gym.custom}` : ""}
                     </span>
                   </span>
+                </button>
+                <button onClick={() => setInfo(e)} className="press grid size-10 shrink-0 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-text" aria-label="Info">
+                  <Info className="size-[18px]" />
                 </button>
               </li>
             );
@@ -93,6 +102,8 @@ export function ExercisePicker({ open, onClose, library, onPick, multi = true, o
           </Button>
         </div>
       )}
+
+      <ExerciseInfoSheet exercise={info} onClose={() => setInfo(null)} />
 
       <CreateExerciseSheet
         open={creating}

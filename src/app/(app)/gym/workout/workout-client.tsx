@@ -13,6 +13,7 @@ import { Button, cn, Field, fmt, Input, Textarea } from "@/components/ui";
 import { VisibilityPicker } from "@/components/meal-section";
 import { PhotoPicker, type PickedPhoto } from "@/components/photo-picker";
 import { ExercisePicker, exerciseName, type ExerciseLite } from "@/components/gym/exercise-picker";
+import { ExerciseInfoSheet, ExerciseThumb } from "@/components/gym/exercise-media";
 import { e1rm, fmtClock, fmtKg, fmtSet, MUSCLE_LABEL, REST_OPTIONS, setVolume, type LiveSet, type Muscle, type SetType } from "@/lib/gym";
 import { defaultWorkoutName, newSet, readLive, uid, useLiveWorkout, useNow, type LiveExercise, type LiveWorkout } from "@/lib/live-workout";
 import { uploadImage } from "@/lib/image-client";
@@ -68,6 +69,7 @@ export function WorkoutClient({ library, routine, defaultVisibility }: { library
   const [discarding, setDiscarding] = useState(false);
   const [rest, setRest] = useState<{ endsAt: number; total: number } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [info, setInfo] = useState<ExerciseLite | null>(null);
   const now = useNow(rest ? 250 : 1000);
 
   // Start (or resume) on mount.
@@ -230,12 +232,15 @@ export function WorkoutClient({ library, routine, defaultVisibility }: { library
           return (
             <section key={ex.key} className={cn("card relative overflow-hidden", (supersetTop || supersetBottom || ex.superset != null) && "pl-1.5", supersetTop && "-mt-2")}>
               {ex.superset != null && <span className="varnish absolute inset-y-0 left-0 w-1.5" aria-hidden />}
-              <div className="flex items-start gap-2 px-4 pb-2 pt-4">
-                <div className="min-w-0 flex-1">
-                  {ex.superset != null && !supersetTop && <div className="text-[10.5px] font-black uppercase tracking-[0.12em] text-muted">Superset</div>}
-                  <Link href={`/gym/exercises/${ex.exerciseId}`} className="block truncate text-[16px] font-extrabold hover:underline">{meta ? exerciseName(meta, locale) : "…"}</Link>
-                  <div className="text-[12px] font-semibold text-faint">{meta ? MUSCLE_LABEL[meta.muscle as Muscle]?.[L] : ""}</div>
-                </div>
+              <div className="flex items-center gap-2 px-4 pb-2 pt-4">
+                <button onClick={() => meta && setInfo(meta)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                  <ExerciseThumb media={meta?.media} name={meta ? exerciseName(meta, locale) : "?"} size={44} />
+                  <span className="min-w-0">
+                    {ex.superset != null && !supersetTop && <span className="block text-[10.5px] font-black uppercase tracking-[0.12em] text-muted">Superset</span>}
+                    <span className="block truncate text-[16px] font-extrabold">{meta ? exerciseName(meta, locale) : "…"}</span>
+                    <span className="block text-[12px] font-semibold text-faint">{meta ? MUSCLE_LABEL[meta.muscle as Muscle]?.[L] : ""}</span>
+                  </span>
+                </button>
                 <button onClick={() => setRestMenu(ex.key)} className="press edge flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-bold">
                   <Timer className="size-3.5" /> {ex.restSec ? fmtClock(ex.restSec) : t.gym.restOff}
                 </button>
@@ -348,6 +353,7 @@ export function WorkoutClient({ library, routine, defaultVisibility }: { library
       )}
 
       {/* Sheets */}
+      <ExerciseInfoSheet exercise={info} onClose={() => setInfo(null)} />
       <ExercisePicker
         open={!!picker}
         onClose={() => setPicker(null)}

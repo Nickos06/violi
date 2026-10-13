@@ -11,7 +11,7 @@ export default async function NewRoutinePage() {
   return (
     <div className="animate-rise">
       <PageHeader back="/gym" title={t.gym.newRoutine} />
-      <RoutineEditor library={await exerciseLibrary(user.id)} />
+      <RoutineEditor library={await exerciseLibrary(user.id, user.locale)} />
     </div>
   );
 }
