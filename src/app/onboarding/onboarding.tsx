@@ -12,13 +12,15 @@ const ACTIVITY: ActivityLevel[] = ["sedentary", "light", "moderate", "active", "
 const DIETS: DietType[] = ["balanced", "high_protein", "low_carb", "keto", "plant"];
 const RATES = { lose: [0.25, 0.5, 0.75, 1], gain: [0.1, 0.25, 0.5] } as const;
 
-export function Onboarding({ name }: { name: string }) {
+/** `profile` prefills what is already known about the user (e.g. an account set up for them). */
+export function Onboarding({ name, profile }: { name: string; profile?: { sex: string | null; birthYear: number | null; heightCm: number | null } }) {
   const { t } = useT();
   const o = t.onboarding;
   const [step, setStep] = useState(0);
   const [pending, start] = useTransition();
   const [s, setS] = useState({
-    goalType: "lose" as GoalType, sex: "male" as "male" | "female", birthYear: "1995", heightCm: "175", weightKg: "80",
+    goalType: "lose" as GoalType, sex: (profile?.sex === "female" ? "female" : "male") as "male" | "female",
+    birthYear: String(profile?.birthYear ?? 1995), heightCm: String(profile?.heightCm ?? 175), weightKg: "80",
     targetWeightKg: "", activityLevel: "light" as ActivityLevel, goalRatePct: 0.5, dietType: "balanced" as DietType,
   });
   const set = <K extends keyof typeof s>(k: K, v: (typeof s)[K]) => setS((p) => ({ ...p, [k]: v }));

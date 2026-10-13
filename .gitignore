@@ -11,3 +11,6 @@ uploads/*
 !uploads/.gitkeep
 .DS_Store
 .claude/
+
+# Local dev accounts (passwords)
+prisma/local-accounts.md
